@@ -76,3 +76,10 @@ Lack of education access can perpetuate inequality, highlighting a potential are
 - Income Inequality Variables: Gini Index.
 - Economic Variables: Real Average Annual Wage Growth, Annual Inflation CPI, Exports of goods and services (annual % growth), Foreign direct investment (net inflows and outflows as % of GDP), Imports of goods and services (% of GDP).
 - Labor Market Variables: Employment/population ratio, Labour force participation rate, Unemployment rate, Labor force total, Labor tax and contributions (% of commercial profits), Part time employment, total (% of total employment).
+
+# Bibliography
+- Freeman, R.B. (1991). ‘How Much Has De-Unionisation Contributed to the Rise in Male Earnings Inequality?’, NBER Working Paper Series. doi: 10.3386/W3826;
+- Guschanski, A. and Onaran, Ö. (2018). ‘What drives the four decades-long decline in labour’s share of income?’, Greenwich Political Economy Research Centre (GPERC), No. PB22-2018;
+- Chauvel, L. and Schröder, M. (2017). ‘Generational Inequalities and Welfare Regimes in 17 Countries’;
+- Chauvel, L. and Schröder, M. (2017). ‘The Vortex of Social Structure and Social Movement: A Prey-Predator Model of Trade Unions and Inequality in 12 Advanced Capitalisms (1870-2013)';
+- Onaran, Ö. (2018). ‘The Four Decades-Long Decline in Labour’s Share of Income 2018’;
