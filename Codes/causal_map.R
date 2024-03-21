@@ -45,7 +45,6 @@ edges <- matrix(c(
   'Labor force, total', 'Collective Bargain Coverage',
   'Labor force, total', 'GDP (current US$)',
   'GDP (current US$)', 'Real Average Annual Wage Growth',
-  
   'Exports of goods and services (annual % growth)', 'GDP (current US$)',
   'Foreign direct investment, net inflows (% of GDP)', 'GDP (current US$)',
   'Foreign direct investment, net outflows (% of GDP)', 'GDP (current US$)',
@@ -98,7 +97,7 @@ df <- df %>%
 # Reset index (In R, this usually means making sure row names are sequential)
 rownames(df) <- NULL
 
-# Print column names
+# let's change the name to some variables
 print(names(df))
 df <- df %>%
   mutate(lnGDP = round(log(GDP), 2))
@@ -110,11 +109,13 @@ df <- df %>%
   mutate(lnminwage = ifelse(Monthly_Minimum_Wage > 0, round(log(Monthly_Minimum_Wage), 2), 0))
 df <- df %>%
   mutate(ln_labor = ifelse(Labor_force > 0, round(log(Labor_force), 2), 0))
-
 # print Minimum_Monthly_Wage, minwage and lnminwage
 print(df %>%
         select(Monthly_Minimum_Wage, minwage, lnminwage),
       n = Inf)
+
+# Check for missing values
+sapply(df, function(x) sum(is.na(x)) / length(x))
 
 ########### IMAGES ############
 library(ggplot2)
@@ -145,8 +146,39 @@ ggplot(df, aes(x = Year, y = WageGrowth, group = Country)) +  # Add 'group = Cou
   labs(title = "Evolution of Wage Growth by Country",  # Corrects the title to reflect wage growth evolution
        y = "Wage Growth",  # Corrects the y-axis label to reflect it's plotting wage growth
        x = "Year") +  # Labels the x-axis
-  theme(legend.position = "none")  # Since 'group = Country' is used, and countries are faceted, a legend is unnecessary
+  theme(legend.position = "none") # Since 'group = Country' is used, and countries are faceted, a legend is unnecessary
 
+# Plotting the histogram for Gini_Index
+ggplot(df, aes(x = Gini_Index)) +
+  geom_histogram(binwidth = 0.1, fill = "blue", color = "lightblue") + # You may adjust binwidth as necessary
+  ggtitle("Histogram of Gini Index") +
+  xlab("Gini Index") +
+  ylab("Frequency") +
+  theme_minimal()
+
+# Plotting the histogram for TradeUnions_Density
+ggplot(df, aes(x = TradeUnions_Density)) +
+  geom_histogram(binwidth = 2, fill = "green", color = "lightblue") + # Adjust binwidth as necessary
+  ggtitle("Histogram of Trade Unions Density") +
+  xlab("Trade Unions Density") +
+  ylab("Frequency") +
+  theme_minimal()
+
+# Scatter plot of Trade Union Density vs. Collective Bargain Coverage
+ggplot(df, aes(x = TradeUnions_Density, y = CollectiveBargain_Coverage)) +
+  geom_point(aes(color = Country), alpha = 1) +  
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "red") +  
+  coord_cartesian(xlim = c(0, 100), ylim = c(0, 100)) +  # Set axis limits to 0-100
+  theme_minimal() +
+  labs(
+    title = "Scatter Plot of Trade Union Density vs. Collective Bargain Coverage",
+    x = "Trade Union Density (%)",
+    y = "Collective Bargain Coverage (%)"
+  ) +
+  theme(
+    plot.title = element_text(hjust = 0.5),
+    legend.position = "bottom"
+  )
 ############ MODEL BUILDING with lm() ############
 #############################################################
 library(stargazer)
@@ -199,6 +231,5 @@ fd_models <- create_models(pdata, "FD", model_formulas)
 stargazer(ols_models, type = "text", title = "OLS Regression Models")
 stargazer(fe_models, type = "text", title = "Fixed Effects Regression Models")
 stargazer(fd_models, type = "text", title = "First Differences Regression Models")
-
 
 
