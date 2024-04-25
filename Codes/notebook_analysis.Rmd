@@ -1,0 +1,549 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(igraph)
+library(readxl)
+df <- read_excel('/Users/jacopobinati/Desktop/thesis/Datasets/Data Finale_balanced1.xlsx')
+```
+
+## **1. Building the initial causal graph**
+
+```{r}
+edges <- matrix(
+  c('Trade Unions Density', 'Gini Index',
+    'Confounders', 'Trade Unions Density',
+    'Confounders', 'Gini Index'),
+  ncol = 2, byrow = TRUE
+)
+P <- graph_from_edgelist(edges, directed = TRUE)
+layout <- layout_in_circle(P)
+# Plot 
+plot(P, layout = layout, vertex.size=20, vertex.label=V(P)$name, vertex.color='skyblue', 
+     edge.arrow.size=1, main="Causal Map", font.main=2, cex.main=1.5,
+     vertex.label.cex=1, vertex.label.family="Times", vertex.label.color="black",
+     margin=-0)
+```
+
+The causal map illustrates a proposed relationship between 'Trade Unions Density' and 'Gini Index', indicated by an arrow pointing from 'Trade Unions Density' to 'Gini Index'. This suggests that variations in trade unions density may lead to changes in the Gini index, implying a causal link between the two variables.
+
+Additionally, 'Confounders' are linked to both 'Trade Unions Density' and 'Gini Index', implying that these external factors could influence both variables. However, without specific details about these confounders, their precise role in the causal relationship remains unclear.
+
+The directional arrows in the map indicate a causal pathway from 'Trade Unions Density' to both 'Gini Index' and 'Confounders'. This suggests a hypothesized causal chain where fluctuations in trade unions density may influence changes in the Gini index, possibly mediated by confounding factors.
+
+## **1.1 Building the full causal graph**
+
+```{r}
+nodes_with_categories <- data.frame(
+  name = c('Collective Bargain Coverage', 'Trade Unions Density', 'Gini Index', 
+           'Real Wage Growth', 'Annual Inflation', 
+           'Exports', 
+           'Foreign direct investment, inflows', 
+           'Foreign direct investment, outflows', 
+           'Imports', 
+           'Current health expenditure', 
+           'Central government debt', 
+           'GDP', 
+           'Labour force participation rate', 
+           'Unemployment rate', 'Labor force, total', 
+           'Labor tax and contributions', 
+           'Part time employment, total', 'Monthly Minimum Wage'),
+  category = c(rep('Collective Bargaining', 2), 'Income Inequality', rep('Economic', 11), 
+               rep('Labor Market', 4))
+)
+edges <- matrix(c('Trade Unions Density', 'Gini Index',
+                  'Collective Bargain Coverage', 'Trade Unions Density',
+                  'Real Wage Growth', 'Trade Unions Density',
+                  'Annual Inflation', 'Real Wage Growth',
+                  'Annual Inflation', 'Labor tax and contributions',
+                  'Labor tax and contributions', 'GDP',
+                  'Labor tax and contributions', 'Labor force',
+                  'Part time employment', 'Labor force',
+                  'Labour force participation rate', 'Labor force',
+                  'Unemployment rate', 'Labor force',
+                  'Labor force', 'Real Wage Growth',
+                  'Labor force', 'Annual Inflation',
+                  'Labor force', 'Collective Bargain Coverage',
+                  'Labor force', 'GDP',
+                  'GDP', 'Real Wage Growth',
+                  'Exports', 'GDP',
+                  'Foreign direct investment, inflows', 'GDP',
+                  'Foreign direct investment, outflows', 'GDP',
+                  'Importss', 'GDP'), 
+                byrow = TRUE, ncol = 2)
+
+G <- graph_from_edgelist(edges, directed = TRUE)
+V(G)$category <- nodes_with_categories$category[match(V(G)$name, nodes_with_categories$name)]
+
+plot(G, seed=42, vertex.size=25, vertex.label=V(G)$name, vertex.color="lightblue", 
+     main="Causal Map: Labour Unions and Income Inequality",
+     edge.arrow.size=.7, vertex.label.cex=0.5, vertex.label.family="Times",
+     layout=layout_with_fr(G, area=vcount(G)^6, repulserad=vcount(G)^6))
+
+```
+
+## **2. Data processing and variable renaming**
+
+```{r}
+library(dplyr)
+library(tidyr)
+library(tibble)
+df <- as_tibble(df)
+```
+
+```{r}
+df <- df %>%
+  rename(
+    Labor_force = `Labor force, total`,
+    GDP = `GDP (current US$)`,
+    Inflation = `Annual Inflation CPI`,
+    WageGrowth = `Real Average Annual Wage Growth`,
+    Female_Workers = `Labour force participation rate (Women age 15 to 64)`,
+    TradeUnions_Density = `TradeUnions_Density`, # Ensure case sensitivity matches your original dataframe
+    Gov_debt = `Central government debt, total (% of GDP)`,
+    WomenUnemployment_rate = `Unemployment rate (Women age 15 to 64)`,
+    Health_expenditure = `Current health expenditure (% of GDP)`,
+    Exports_growth = `Exports of goods and services (annual % growth)`,
+    Imports_growth = `Imports of goods and services (% of GDP)`,
+    FDI_inflow = `Foreign direct investment, net inflows (% of GDP)`,
+    FDI_outflow = `Foreign direct investment, net outflows (% of GDP)`,
+    Tax_contribution = `Labor tax and contributions (% of commercial profits)`,
+    Parttime_employment = `Part time employment, total (% of total employment)`,
+    Monthly_Minimum_Wage = `Monthly Minimum Wage`,
+    Gini_Index = `Gini Index`,
+  )
+```
+
+```{r}
+rownames(df) <- NULL
+```
+
+```{r}
+df <- df %>%
+  mutate(lnGDP = round(log(GDP), 2))
+# Create a binary column 'minwage' where 1 indicates there's at least one positive value in 'Monthly Minimum Wage'
+# and 0 otherwise
+df <- df %>%
+  mutate(minwage = ifelse(Monthly_Minimum_Wage > 0, 1, 0))
+df <- df %>%
+  mutate(lnminwage = ifelse(Monthly_Minimum_Wage > 0, round(log(Monthly_Minimum_Wage), 2), 0))
+df <- df %>%
+  mutate(ln_labor = ifelse(Labor_force > 0, round(log(Labor_force), 2), 0))
+# print Minimum_Monthly_Wage, minwage and lnminwage
+print(df %>%
+        select(Monthly_Minimum_Wage, minwage, lnminwage),
+      n = Inf)
+first_year_positive_lnminwage <- df %>%
+  filter(lnminwage > 0) %>%
+  group_by(Country) %>%
+  summarize(FirstYear = min(Year))
+
+# create a new variable bargain
+df <- df %>%
+  mutate(bargain = TradeUnions_Density/CollectiveBargain_Coverage)
+df <- df %>%
+  mutate(bargain1 = sqrt(TradeUnions_Density) * log(CollectiveBargain_Coverage))
+df$Year <- as.numeric(as.character(df$Year))
+
+# Calculate the average Gini index for each year
+average_gini <- aggregate(Gini_Index ~ Year, data = df, FUN = mean)
+average_trade_union <- aggregate(TradeUnions_Density ~ Year, data = df, FUN = mean)
+average_collective_bargaining <- aggregate(CollectiveBargain_Coverage ~ Year, data = df, FUN = mean)
+```
+
+```{r}
+sapply(df, function(x) sum(is.na(x)) / length(x))
+```
+
+## 3. New Database implemented for Democratic Governance
+
+ASSUME THAT CIVIC PARTICIPATION IS EXOGENOUS TO GINI INDEX
+
+```{r}
+library(readr)
+rol <- read_csv("/Users/jacopobinati/Desktop/thesis/Datasets/rule-of-law-index.csv")
+part <- read_csv("/Users/jacopobinati/Desktop/thesis/Datasets/civil-society-participation-index.csv")
+
+# Specify countries to keep
+countries_to_keep <- c('Austria', 'Belgium', 'Czechia', 'Denmark', 'Estonia', 'Finland', 
+                       'France', 'Germany', 'Greece', 'Hungary', 'Iceland', 'Ireland', 
+                       'Italy', 'Lithuania', 'Luxemburg', 'Netherlands', 'Norway', 'Poland', 
+                       'Portugal', 'Slovak Republic', 'Spain', 'Sweden', 'Switzerland', 
+                       'United Kingdom')
+
+# Filter rol and part data
+rol <- rol %>% 
+  filter(Year >= 1990, Entity %in% countries_to_keep)
+
+part <- part %>%
+  filter(Year >= 1990, Entity %in% countries_to_keep)
+
+# Drop columns
+columns_to_drop1 <- c('civsoc_particip_vdem_low_owid', 'civsoc_particip_vdem_high_owid')
+columns_to_drop2 <- c('rule_of_law_vdem_low_owid', 'rule_of_law_vdem_high_owid')
+
+rol <- select(rol, -one_of(columns_to_drop2))
+part <- select(part, -one_of(columns_to_drop1))
+
+# Rename columns
+rol <- rename(rol, rol = rule_of_law_vdem_owid, Country = Entity)
+part <- rename(part, civsoc_particip = civsoc_particip_vdem_owid, Country = Entity)
+# merging process
+df <- merge(df, rol, by = c("Country", "Year"), all.x = TRUE)
+df <- merge(df, part, by = c("Country", "Year"), all.x = TRUE)
+
+# Drop unnecessary columns
+dropdf <- c('Code.x', 'Code.y')
+df <- select(df, -one_of(dropdf))
+
+# Create a new column 'demo'
+df$demo <- df$civsoc_particip * df$rol
+# create a copy of df and call it dataset
+dataset <- df
+
+# Check for missing values in the dataset
+missing_values <- is.na(dataset)
+missing_values_summary <- colSums(missing_values)
+print(missing_values_summary)
+dataset <- dataset %>%
+  filter(!Country %in% c("Slovak Republic", "Luxembourg"))
+```
+
+```{r}
+average_demo <- aggregate(demo ~ Year, data = dataset, FUN = mean)
+average_civicsoc_particip <- aggregate(civsoc_particip ~ Year, data = dataset, FUN = mean)
+average_rol <- aggregate(rol ~ Year, data = dataset, FUN = mean)
+```
+
+```{r}
+# Calculate the normalized density and demo variables
+dataset$norm_density <- (dataset$TradeUnions_Density - min(dataset$TradeUnions_Density)) / (max(dataset$TradeUnions_Density) - min(dataset$TradeUnions_Density))
+dataset$norm_demo <- (dataset$demo - min(dataset$demo)) / (max(dataset$demo) - min(dataset$demo))
+
+average_norm_density <- aggregate(norm_density ~ Year, data = dataset, FUN = mean)
+average_norm_demo <- aggregate(norm_demo ~ Year, data = dataset, FUN = mean)
+```
+
+```{r}
+# Ensure 'Year' and 'Country' are correctly formatted
+dataset$Year <- as.integer(dataset$Year)
+dataset$Country <- as.factor(dataset$Country)
+##########################################################
+# Sum of NA values in each column
+na_count <- sapply(dataset, function(x) sum(is.na(x)))
+print(na_count)
+# Sum of infinite values in each column
+inf_count <- sapply(dataset, function(x) sum(is.infinite(x)))
+print(inf_count)
+# Combined check for any NA or infinite values across the entire dataset
+total_issues <- sum(na_count + inf_count)
+print(total_issues)
+```
+
+## **4. Plots**
+
+```{r}
+library(ggplot2)
+ggplot(df_long, aes(x = Year, y = Value, color = Indicator, group = Indicator)) +
+  geom_line() +
+  facet_wrap(~ Country, scales = "free_y") +
+  theme_minimal() +
+  labs(title = "Evolution of Gini Index and Trade Unions Density by Country",
+       y = "Value",
+       x = "Year",
+       color = "Indicator") +
+  theme(legend.position = "bottom")
+```
+
+```{r}
+YearIntroduced <- df_long %>%
+  group_by(Country) %>%
+  filter(Value > 0) %>%
+  slice(1) %>%
+  ungroup()
+
+# Plot with YearIntroduced
+ggplot(df_long, aes(x = Year, y = Value, color = Indicator, group = interaction(Indicator, Country))) +
+  geom_line() +
+  facet_wrap(~ Country, scales = "free_y") +
+  geom_vline(data = YearIntroduced, aes(xintercept = YearIntroduced$Year), linetype = "dashed", color = "red") +
+  theme_minimal() +
+  labs(title = "Evolution of Gini Index and Trade Unions Density by Country",
+       y = "Value",
+       x = "Year",
+       color = "Indicator") +
+  theme(legend.position = "bottom")
+```
+
+```{r}
+# Plotting the histogram for Gini_Index
+ggplot(df, aes(x = Gini_Index)) +
+  geom_histogram(binwidth = 0.1, fill = "blue", color = "lightblue") +
+  ggtitle("Histogram of Gini Index") +
+  xlab("Gini Index") +
+  ylab("Frequency") +
+  theme_minimal()
+```
+
+```{r}
+# Correlation Coefficients of Wealth Inequality vs. Union Density forEach Country IndividuallyUnion
+correlation_df <- df %>%
+  group_by(Country) %>%
+  summarize(correlation = cor(Gini_Index, TradeUnions_Density, use = "pairwise.complete.obs"))
+correlation_df$Country <- factor(correlation_df$Country, levels = correlation_df$Country[order(correlation_df$correlation)])
+
+ggplot(correlation_df, aes(x = Country, y = correlation)) +
+  geom_bar(stat = "identity", fill = "skyblue", position = "dodge") +
+  geom_text(aes(label = round(correlation, 2)), vjust = -0.5, position = position_dodge(width = 0.7)) +
+  ggtitle("Correlation Coefficients of Wealth Inequality vs. Union Density by Country") +
+  xlab("Country") +
+  ylab("Correlation Coefficient") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+```{r}
+# Plotting the scatter of average Gini index, Trade union density, and collective brgaining over time
+# First plot: Average Gini Index over time
+ggplot(average_gini, aes(x = Year, y = Gini_Index)) +
+  geom_line(color = "blue", size = 1) +
+  labs(title = "Average Gini Index Over Time",
+       x = "Year",
+       y = "Average Gini Index") +
+  theme_minimal()
+
+# Second plot: Average Trade Union Density and Collective Bargaining Coverage over time
+ggplot() +
+  geom_line(data = average_trade_union, aes(x = Year, y = TradeUnions_Density, color = "Trade Union Density"), size = 1) +
+  geom_line(data = average_collective_bargaining, aes(x = Year, y = CollectiveBargain_Coverage, color = "Collective Bargaining Coverage"), size = 1) +
+  labs(title = "Average Union Density and Bargaining Coverage Over Time",
+       x = "Year",
+       y = "Average",
+       color = "Variable") +
+  scale_color_manual(values = c("blue", "black"),
+                     labels = c("Trade Union Density", "Collective Bargaining Coverage")) +
+  theme_minimal() +
+  theme(legend.position = "bottom",
+        text = element_text(size = 16),  
+        legend.text = element_text(size = 20),  
+        legend.title = element_text(size = 20),
+        plot.title = element_text(size = 24)) 
+```
+
+#### 4.1 K-means clustering and plotting
+
+Why this? this shows how coverage and density spread over time for each country. what's meaningful is to see that a perfect proportion would follow the red line but in most of the cases we find high coverage and low density, showing low protection of workers from trade unions.
+
+```{r}
+# Perform k-means clustering
+set.seed(123) # for reproducibility
+kmeans_result <- kmeans(df[, c("TradeUnions_Density", "CollectiveBargain_Coverage")], 
+                        centers = 3)
+
+# Add cluster labels to the dataframe
+df$cluster <- as.factor(kmeans_result$cluster)
+
+# Scatter plot with k-means clustering
+ggplot(df, aes(x = TradeUnions_Density, y = CollectiveBargain_Coverage, color = cluster)) +
+  geom_point(alpha = 0.7) +  
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "red") +  
+  coord_cartesian(xlim = c(0, 100), ylim = c(0, 100)) +  
+  theme_minimal() +
+  labs(
+    title = "Scatter Plot of Trade Union Density vs. Collective Bargain Coverage with K-means Clustering",
+    x = "Trade Union Density (%)",
+    y = "Collective Bargain Coverage (%)",
+    color = "Cluster"
+  ) +
+  theme(
+    plot.title = element_text(hjust = 0.5),
+    legend.position = "bottom"
+  )
+```
+
+#### 4.2 Plot the average values of demo, civsoc_particip, and rol over time
+
+```{r}
+ggplot() +
+  geom_line(data = average_civicsoc_particip, aes(x = Year, y = civsoc_particip, color = "Civic Social Participation"), size = 1) +
+  geom_line(data = average_rol, aes(x = Year, y = rol, color = "Rule of Law"), size = 1) +
+  labs(title = "Average Civic Social Participation and Rule of Law Over Time",
+       x = "Year",
+       y = "Average",
+       color = "Variable") +
+  scale_color_manual(values = c("blue", "green"),
+                     labels = c("Civic Social Participation", "Rule of Law")) +
+  theme_minimal() +
+  theme(legend.position = "bottom",
+        text = element_text(size = 12),  # Set font size for all text elements
+        legend.text = element_text(size = 12),  # Set font size for legend text
+        legend.title = element_text(size = 12),  # Set font size for legend title
+        plot.title = element_text(size = 16))
+```
+
+```{r}
+ggplot() +
+  geom_line(data = average_norm_density, aes(x = Year, y = norm_density, color = "Density"), size = 1) +
+  geom_line(data = average_norm_demo, aes(x = Year, y = norm_demo, color = "Democracy Index"), size = 1) +
+  labs(title = "Average Normalized Density and Democracy Index Over Time",
+       x = "Year",
+       y = "Average",
+       color = "Variable") +
+  scale_color_manual(values = c("blue", "green"),
+                     labels = c("Density", "Democracy Index")) +
+  theme_minimal() +
+  theme(legend.position = "bottom",
+        text = element_text(size = 12),  
+        legend.text = element_text(size = 12),  
+        legend.title = element_text(size = 12),  
+        plot.title = element_text(size = 16))
+```
+
+## 5. Checking for Multicollinearity with Eigenvalue test and VIF
+
+```{r}
+# Check for multicollinearity using the eigenvalue test
+correlation_matrix <- cor(dataset[, c("demo", "CollectiveBargain_Coverage", "Inflation", "WageGrowth", 
+                                      "Gov_debt", "ln_labor", "WomenUnemployment_rate", "Exports_growth", 
+                                      "Imports_growth", "Tax_contribution")])
+eigenvalues <- eigen(correlation_matrix)$values
+print(eigenvalues)
+```
+
+```{r}
+# Check for multicollinearity using the VIF function
+vif_values <- car::vif(lm(Gini_Index ~ demo + CollectiveBargain_Coverage + Inflation + WageGrowth + 
+                            Gov_debt + ln_labor + WomenUnemployment_rate + Exports_growth + Imports_growth + 
+                            Tax_contribution, data = dataset))
+print(vif_values)
+```
+
+The output shows the VIF values for each independent variable. VIF values below 5 are generally considered acceptable, indicating that multicollinearity is not severe. In this case, all VIF values are below 5, suggesting that multicollinearity is not a significant concern among the predictor variables in the model. However, it's essential to interpret these results in conjunction with other diagnostics and consider the context of the analysis.
+
+## 6. Model Building
+
+```{r}
+library(stargazer)
+library(plm)
+library(AER)
+library(readr)
+df <- df %>%
+  mutate(
+    Country = as.factor(Country),
+    Year = as.factor(Year)
+  )
+pdata <- pdata.frame(df, index = c("Country", "Year"))
+```
+
+Creating first models for OLS, FE, and FD:
+
+```{r}
+model_formulas <- c(
+  "Gini_Index ~ TradeUnions_Density + bargain1 + Inflation + WageGrowth + lnminwage",
+  "Gini_Index ~ TradeUnions_Density + bargain1 + Inflation + WageGrowth + lnminwage + CollectiveBargain_Coverage",
+  "Gini_Index ~ TradeUnions_Density + bargain1 + Inflation + WageGrowth + lnminwage + CollectiveBargain_Coverage + lnGDP + Gov_debt",
+  "Gini_Index ~ TradeUnions_Density + bargain1 + Inflation + WageGrowth + lnminwage + CollectiveBargain_Coverage + lnGDP + Gov_debt + ln_labor + Female_Workers + Parttime_employment + WomenUnemployment_rate",
+  "Gini_Index ~ TradeUnions_Density + bargain1 + Inflation + WageGrowth + lnminwage + CollectiveBargain_Coverage + lnGDP + Gov_debt + ln_labor + Female_Workers + Parttime_employment + WomenUnemployment_rate + Exports_growth + Imports_growth",
+  "Gini_Index ~ TradeUnions_Density + bargain1 + Inflation + WageGrowth + lnminwage + CollectiveBargain_Coverage + lnGDP + Gov_debt + ln_labor + Female_Workers + Parttime_employment + WomenUnemployment_rate + Exports_growth + Imports_growth + FDI_inflow + FDI_outflow + Tax_contribution"
+)
+
+create_models <- function(data, type, formulas) {
+  lapply(formulas, function(formula) {
+    formula <- as.formula(formula)
+    if (type == "OLS") {
+      return(lm(formula, data = data))
+    } else if (type == "FE") {
+      return(plm(formula, data = data, model = "within"))
+    } else if (type == "FD") {
+      return(plm(formula, data = data, model = "fd"))
+    } else {
+      stop("Unknown model type")
+    }
+  })
+}
+
+# Create OLS, FE, and FD models
+ols_models <- create_models(df, "OLS", model_formulas)
+fe_models <- create_models(pdata, "FE", model_formulas)
+fd_models <- create_models(pdata, "FD", model_formulas)
+
+# Summarize the models
+stargazer(ols_models[c(4, 5, 6)], type = "text", title = "OLS Regression Models")
+stargazer(fd_models[c(4, 5, 6)], type = "text", title = "First Differences Regression Models")
+stargazer(fe_models[c(4, 5, 6)], type = "text", title = "Fixed Effects Regression Models")
+
+```
+
+## 6. 1 Two-Ways Fixed Effect with Instrumental Variable
+
+```{r}
+library(lfe)
+library(lmtest)
+first_stage <- lm(bargain1 ~ demo + CollectiveBargain_Coverage + Inflation + WageGrowth + Gov_debt + ln_labor + WomenUnemployment_rate, data = dataset)
+summary(first_stage)
+
+dataset$bargain1_fitted <- predict(first_stage, newdata = dataset)
+# Perform the second stage of the IV regression
+second_stage <- lm(Gini_Index ~ bargain1_fitted + CollectiveBargain_Coverage + Inflation + WageGrowth + Gov_debt + ln_labor + WomenUnemployment_rate, data = dataset)
+# Display the summary of the second-stage regression
+summary(second_stage)
+```
+
+```{r}
+library(xtable)
+first_stage_summary <- summary(first_stage)
+second_stage_summary <- summary(second_stage)
+# Convert summaries to LaTeX format
+first_stage_table <- xtable(first_stage_summary)
+second_stage_table <- xtable(second_stage_summary)
+
+file_path_first_stage <- "/Users/jacopobinati/Desktop/thesis/results/first_stage_table.tex"
+file_path_second_stage <- "/Users/jacopobinati/Desktop/thesis/results/second_stage_table.tex"
+
+# Print LaTeX tables to files
+print(first_stage_table, file = file_path_first_stage)
+print(second_stage_table, file = file_path_second_stage)
+```
+
+In the first stage, a linear regression model is estimated to predict the potentially endogenous variable.
+
+In the second stage, the potentially endogenous variable predicted by the instruments in the first stage (bargain1_fitted) is used as an explanatory variable in another linear regression model to predict the outcome variable (Gini_Index). This stage is essential because it estimates the effect of the potentially endogenous variable on the outcome variable while addressing endogeneity issues.
+
+By using the predicted values of bargain1bargain1 from the first stage, the second-stage regression ensures that the potentially endogenous variable is uncorrelated with the error term, thus providing consistent estimates of its effect on the outcome variable.
+
+In summary, the first stage estimates the relationship between the instruments and the potentially endogenous variable, while the second stage estimates the effect of the potentially endogenous variable on the outcome variable while addressing endogeneity concerns.
+
+This two-stage process is fundamental in instrumental variable regression to obtain unbiased estimates of causal effects in the presence of endogeneity.
+
+```{r}
+model4_formula <- ivreg(Gini_Index ~ bargain1 + Inflation + WageGrowth + lnminwage + CollectiveBargain_Coverage + lnGDP + Gov_debt + ln_labor + Female_Workers + Parttime_employment + WomenUnemployment_rate | TradeUnions_Density + demo + Inflation + WageGrowth + lnminwage + CollectiveBargain_Coverage + lnGDP + Gov_debt + ln_labor + Female_Workers + Parttime_employment + WomenUnemployment_rate, data = dataset)
+
+model5_formula <- ivreg(Gini_Index ~ bargain1 + Inflation + WageGrowth + lnminwage + CollectiveBargain_Coverage + lnGDP + Gov_debt + ln_labor + Female_Workers + Parttime_employment + WomenUnemployment_rate + Exports_growth + Imports_growth | TradeUnions_Density + demo + Inflation + WageGrowth + lnminwage + CollectiveBargain_Coverage + lnGDP + Gov_debt + ln_labor + Female_Workers + Parttime_employment + WomenUnemployment_rate + Exports_growth + Imports_growth, data = dataset)
+
+model6_formula <- ivreg(Gini_Index ~ bargain1 + Inflation + WageGrowth + lnminwage + CollectiveBargain_Coverage + lnGDP + Gov_debt + ln_labor + Female_Workers + Parttime_employment + WomenUnemployment_rate + Exports_growth + Imports_growth + FDI_inflow + FDI_outflow + Tax_contribution | TradeUnions_Density + demo + Inflation + WageGrowth + lnminwage + CollectiveBargain_Coverage + lnGDP + Gov_debt + ln_labor + Female_Workers + Parttime_employment + WomenUnemployment_rate + Exports_growth + Imports_growth + FDI_inflow + FDI_outflow + Tax_contribution, data = dataset)
+
+# Estimate the models
+model4 <- summary(model4_formula)
+model5 <- summary(model5_formula)
+model6 <- summary(model6_formula)
+
+# Display the summaries
+print(model4)
+print(model5)
+print(model6)
+stargazer(model4_formula, model5_formula, model6_formula, type="text")
+```
+
+```{r}
+models_list <- list(model4_formula, model5_formula, model6_formula)
+
+# Specify file path
+file_path_models <- "/Users/jacopobinati/Desktop/thesis/results/models_table.tex"
+
+# Generate LaTeX table
+models_table <- stargazer(models_list, type = "text", title = "2WFE + IV Regression Models", header = FALSE)
+
+cat(models_table, file = file_path_models)
+```
