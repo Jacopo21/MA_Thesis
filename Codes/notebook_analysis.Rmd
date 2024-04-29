@@ -315,21 +315,29 @@ ggplot(average_gini, aes(x = Year, y = Gini_Index)) +
   theme_minimal()
 
 # Second plot: Average Trade Union Density and Collective Bargaining Coverage over time
-ggplot() +
+p <- ggplot() +
   geom_line(data = average_trade_union, aes(x = Year, y = TradeUnions_Density, color = "Trade Union Density"), size = 1) +
   geom_line(data = average_collective_bargaining, aes(x = Year, y = CollectiveBargain_Coverage, color = "Collective Bargaining Coverage"), size = 1) +
   labs(title = "Average Union Density and Bargaining Coverage Over Time",
        x = "Year",
        y = "Average",
        color = "Variable") +
-  scale_color_manual(values = c("blue", "black"),
-                     labels = c("Trade Union Density", "Collective Bargaining Coverage")) +
+  scale_color_manual(values = c("lightblue", "lightgreen"),
+                     labels = c("Collective Bargaining Coverage", "Trade Union Density")) +
   theme_minimal() +
   theme(legend.position = "bottom",
         text = element_text(size = 16),  
         legend.text = element_text(size = 20),  
         legend.title = element_text(size = 20),
-        plot.title = element_text(size = 24)) 
+        plot.title = element_text(size = 24),
+        axis.text.x = element_text(angle = 45, hjust = 1)) + # rotate x-axis labels
+  ylim(20, 80)
+
+```
+
+```{r}
+# Save the plot
+ggsave(filename = "/Users/jacopobinati/Desktop/thesis/Images/averageovertime.png", plot = p, width = 10, height = 6)
 ```
 
 #### 4.1 K-means clustering and plotting
