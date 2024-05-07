@@ -18,13 +18,19 @@ edges <- matrix(
     'Confounders', 'Gini Index'),
   ncol = 2, byrow = TRUE
 )
+
 P <- graph_from_edgelist(edges, directed = TRUE)
-layout <- layout_in_circle(P)
+
+# Assign oval shape to vertex labels
+V(P)$label_shape <- "ellipse"
+
 # Plot 
-plot(P, layout = layout, vertex.size=20, vertex.label=V(P)$name, vertex.color='skyblue', 
-     edge.arrow.size=1, main="Causal Map", font.main=2, cex.main=1.5,
-     vertex.label.cex=1, vertex.label.family="Times", vertex.label.color="black",
-     margin=-0)
+plot(
+  P, layout = layout_with_sugiyama(P), vertex.size = 20, vertex.label = V(P)$name, 
+  vertex.color = 'skyblue', edge.arrow.size = 1, main = "Causal Map", 
+  font.main = 2, cex.main = 1.5, vertex.label.cex = 1, vertex.label.family = "Times", 
+  vertex.label.color = "black", margin = -0
+)
 ```
 
 The causal map illustrates a proposed relationship between 'Trade Unions Density' and 'Gini Index', indicated by an arrow pointing from 'Trade Unions Density' to 'Gini Index'. This suggests that variations in trade unions density may lead to changes in the Gini index, implying a causal link between the two variables.
@@ -77,10 +83,14 @@ edges <- matrix(c('Trade Unions Density', 'Gini Index',
 G <- graph_from_edgelist(edges, directed = TRUE)
 V(G)$category <- nodes_with_categories$category[match(V(G)$name, nodes_with_categories$name)]
 
-plot(G, seed=42, vertex.size=25, vertex.label=V(G)$name, vertex.color="lightblue", 
-     main="Causal Map: Labour Unions and Income Inequality",
-     edge.arrow.size=.7, vertex.label.cex=0.5, vertex.label.family="Times",
-     layout=layout_with_fr(G, area=vcount(G)^6, repulserad=vcount(G)^6))
+c <- plot(G, layout=layout_with_fr(G, area=vcount(G)^3*6, repulserad=vcount(G)^3*6),
+          vertex.size=25, vertex.label=V(G)$name, vertex.color="lightblue", 
+          main="Causal Map: Labour Unions and Income Inequality",
+          edge.arrow.size=.7, vertex.label.cex=0.8, vertex.label.family="Times")
+
+# Save the plot
+library(ggplot2)
+ggsave(filename = "/Users/jacopobinati/Desktop/thesis/Images/fullcausalmap.png", plot = c, width = 10, height = 6)
 
 ```
 
@@ -146,6 +156,7 @@ df <- df %>%
 df <- df %>%
   mutate(bargain1 = sqrt(TradeUnions_Density) * log(CollectiveBargain_Coverage))
 df$Year <- as.numeric(as.character(df$Year))
+# nonlinear transformation, potentially capturing complex relationships between them
 
 # Calculate the average Gini index for each year
 average_gini <- aggregate(Gini_Index ~ Year, data = df, FUN = mean)
@@ -255,6 +266,7 @@ ggplot(df_long, aes(x = Year, y = Value, color = Indicator, group = Indicator)) 
        x = "Year",
        color = "Indicator") +
   theme(legend.position = "bottom")
+
 ```
 
 ```{r}
@@ -265,7 +277,7 @@ YearIntroduced <- df_long %>%
   ungroup()
 
 # Plot with YearIntroduced
-ggplot(df_long, aes(x = Year, y = Value, color = Indicator, group = interaction(Indicator, Country))) +
+b <- ggplot(df_long, aes(x = Year, y = Value, color = Indicator, group = interaction(Indicator, Country))) +
   geom_line() +
   facet_wrap(~ Country, scales = "free_y") +
   geom_vline(data = YearIntroduced, aes(xintercept = YearIntroduced$Year), linetype = "dashed", color = "red") +
@@ -275,6 +287,11 @@ ggplot(df_long, aes(x = Year, y = Value, color = Indicator, group = interaction(
        x = "Year",
        color = "Indicator") +
   theme(legend.position = "bottom")
+```
+
+```{r}
+# Save the plot
+ggsave(filename = "/Users/jacopobinati/Desktop/thesis/Images/evolutionGini&Density.png", plot = b, width = 10, height = 6)
 ```
 
 ```{r}
@@ -354,7 +371,7 @@ kmeans_result <- kmeans(df[, c("TradeUnions_Density", "CollectiveBargain_Coverag
 df$cluster <- as.factor(kmeans_result$cluster)
 
 # Scatter plot with k-means clustering
-ggplot(df, aes(x = TradeUnions_Density, y = CollectiveBargain_Coverage, color = cluster)) +
+g <- ggplot(df, aes(x = TradeUnions_Density, y = CollectiveBargain_Coverage, color = cluster)) +
   geom_point(alpha = 0.7) +  
   geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "red") +  
   coord_cartesian(xlim = c(0, 100), ylim = c(0, 100)) +  
@@ -369,6 +386,8 @@ ggplot(df, aes(x = TradeUnions_Density, y = CollectiveBargain_Coverage, color = 
     plot.title = element_text(hjust = 0.5),
     legend.position = "bottom"
   )
+# Save the plot
+ggsave(filename = "/Users/jacopobinati/Desktop/thesis/Images/kmeanclustering_densityCoverage.png", plot = g, width = 10, height = 6)
 ```
 
 #### 4.2 Plot the average values of demo, civsoc_particip, and rol over time
@@ -407,6 +426,55 @@ ggplot() +
         legend.text = element_text(size = 12),  
         legend.title = element_text(size = 12),  
         plot.title = element_text(size = 16))
+```
+
+```{r}
+ggplot() +
+  geom_line(data = average_civicsoc_particip, aes(x = Year, y = Value, color = "Civic Participation"), size = 1) +
+  geom_line(data = average_rol, aes(x = Year, y = Value, color = "Rule of Law"), size = 1) +
+  labs(title = "Average Civic Participation and Rule of Law Over Time",
+       x = "Year",
+       y = "Average",
+       color = "Variable") +
+  scale_color_manual(values = c("blue", "green"),
+                     labels = c("Civic Participation", "Rule of Law"),
+                     name = "Variable") +  # added name argument to scale_color_manual
+  theme_minimal() +
+  theme(legend.position = "bottom",
+        text = element_text(size = 12),  
+        legend.text = element_text(size = 12),  
+        legend.title = element_text(size = 12),  
+        plot.title = element_text(size = 16))
+
+```
+
+```{r}
+plot_fdi <- ggplot(dataset, aes(x = Year)) +
+  geom_line(aes(y = FDI_inflow, color = "FDI Inflow")) +
+  geom_line(aes(y = FDI_outflow, color = "FDI Outflow")) +
+  facet_wrap(~ Country, scales = "free_y") +
+  labs(title = "FDI Inflow and FDI Outflow Over Time by Country",
+       y = "Value",
+       x = "Year",
+       color = "Indicator") +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+
+# Plot for GDP over time
+plot_gdp <- ggplot(dataset, aes(x = Year)) +
+  geom_line(aes(y = lnGDP, color = "lnGDP")) +
+  facet_wrap(~ Country, scales = "free_y") +
+  labs(title = "Logarithm of GDP Over Time by Country",
+       y = "ln(GDP)",
+       x = "Year",
+       color = "Indicator") +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+
+# Save the plots
+ggsave(filename = "/Users/jacopobinati/Desktop/thesis/Images/FDI.png", plot = plot_fdi, width = 10, height = 6)
+ggsave(filename = "/Users/jacopobinati/Desktop/thesis/Images/GDP.png", plot = plot_gdp, width = 10, height = 6)
+
 ```
 
 ## 5. Checking for Multicollinearity with Eigenvalue test and VIF
