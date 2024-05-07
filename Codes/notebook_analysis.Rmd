@@ -156,13 +156,17 @@ df <- df %>%
 df <- df %>%
   mutate(bargain1 = sqrt(TradeUnions_Density) * log(CollectiveBargain_Coverage))
 df$Year <- as.numeric(as.character(df$Year))
-# nonlinear transformation, potentially capturing complex relationships between them
+
 
 # Calculate the average Gini index for each year
 average_gini <- aggregate(Gini_Index ~ Year, data = df, FUN = mean)
 average_trade_union <- aggregate(TradeUnions_Density ~ Year, data = df, FUN = mean)
 average_collective_bargaining <- aggregate(CollectiveBargain_Coverage ~ Year, data = df, FUN = mean)
 ```
+
+Why bargain 1 computed this way?
+
+Nonlinear transformation, potentially capturing complex relationships between them# Enhanced Interpretability: The transformed variable "bargain1" could potentially have a more interpretable relationship with the original variables. For example, the square root transformation may help to stabilize variance, while the logarithmic transformation may compress larger values, making the relationship easier to understand or visualize.
 
 ```{r}
 sapply(df, function(x) sum(is.na(x)) / length(x))
