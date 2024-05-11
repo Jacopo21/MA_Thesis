@@ -260,6 +260,14 @@ print(total_issues)
 ## **4. Plots**
 
 ```{r}
+YearIntroduced <- df_long %>%
+  group_by(Country) %>%
+  filter(Value > 0) %>%
+  slice(1) %>%
+  ungroup()
+```
+
+```{r}
 library(ggplot2)
 ggplot(df_long, aes(x = Year, y = Value, color = Indicator, group = Indicator)) +
   geom_line() +
@@ -274,12 +282,6 @@ ggplot(df_long, aes(x = Year, y = Value, color = Indicator, group = Indicator)) 
 ```
 
 ```{r}
-YearIntroduced <- df_long %>%
-  group_by(Country) %>%
-  filter(Value > 0) %>%
-  slice(1) %>%
-  ungroup()
-
 # Plot with YearIntroduced
 b <- ggplot(df_long, aes(x = Year, y = Value, color = Indicator, group = interaction(Indicator, Country))) +
   geom_line() +
