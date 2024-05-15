@@ -167,7 +167,6 @@ first_year_positive_lnminwage <- df %>%
 # create a new variable bargain
 df <- df %>%
   mutate(bargain = TradeUnions_Density/CollectiveBargain_Coverage)
-
 df$Year <- as.numeric(as.character(df$Year))
 
 
@@ -175,6 +174,56 @@ df$Year <- as.numeric(as.character(df$Year))
 average_gini <- aggregate(Gini_Index ~ Year, data = df, FUN = mean)
 average_trade_union <- aggregate(TradeUnions_Density ~ Year, data = df, FUN = mean)
 average_collective_bargaining <- aggregate(CollectiveBargain_Coverage ~ Year, data = df, FUN = mean)
+```
+
+#### 2.1 Creation of Unions (interaction between Density and Coverage)
+
+```{r}
+df <- df %>%
+  mutate(unions = sqrt(TradeUnions_Density) * log(CollectiveBargain_Coverage))
+```
+
+#### 2.2 Creation of other interaction variable between density and coverage 
+
+```{r}
+dataset <- dataset %>%
+  mutate(u1 = TradeUnions_Density/CollectiveBargain_Coverage)
+dataset <- dataset %>%
+  mutate(u2 = TradeUnions_Density^2)
+dataset <- dataset %>%
+  mutate(u3 = CollectiveBargain_Coverage/TradeUnions_Density)
+```
+
+```{r}
+f1 <- c(
+  "Gini_Index ~ u3 + Inflation + WageGrowth + lnminwage + CollectiveBargain_Coverage + lnGDP + Gov_debt + ln_labor + Female_Workers + Parttime_employment + WomenUnemployment_rate",
+  
+  "Gini_Index ~ u3 + Inflation + WageGrowth + lnminwage + CollectiveBargain_Coverage + lnGDP + Gov_debt + ln_labor + Female_Workers + Parttime_employment + WomenUnemployment_rate + net_export",
+  
+  "Gini_Index ~ u3 + Inflation + WageGrowth + lnminwage + CollectiveBargain_Coverage + lnGDP + Gov_debt + ln_labor + Female_Workers + Parttime_employment + WomenUnemployment_rate + net_export + net_FDI + Tax_contribution"
+)
+
+create_models <- function(data, type, formulas) {
+  lapply(formulas, function(formula) {
+    formula <- as.formula(formula)
+    if (type == "OLS") {
+      return(lm(formula, data = dataset))
+    } else if (type == "FE") {
+      return(plm(formula, data = dataset, model = "within"))
+    } else {
+      stop("Unknown model type")
+    }
+  })
+}
+
+# Create OLS, FE, and FD models
+ols_models <- create_models(df, "OLS", f1)
+fe_models <- create_models(pdata, "FE", f1)
+
+# Summarize the models
+stargazer(ols_models[c(1, 2, 3)], type = "text", title = "OLS Regression Models")
+stargazer(fe_models[c(1, 2, 3)], type = "text", title = "Fixed Effects Regression Models")
+
 ```
 
 Why unions computed this way?
@@ -275,6 +324,13 @@ total_issues <- sum(na_count + inf_count)
 print(total_issues)
 ```
 
+```{r}
+df_long <- tidyr::pivot_longer(dataset, 
+                                cols = -c(Country, Year),  
+                                names_to = "Variable",
+                                values_to = "Value")
+```
+
 ## 4. Density and Coverage linear or non linear relationship?
 
 ```{r}
@@ -307,7 +363,7 @@ summary(non_linear_model)
 ```
 
 ```{r}
-# Manual AIC and BIC calculations
+# AIC and BIC calculations
 n <- nrow(dataset) # number of observations
 
 # Linear model
@@ -399,12 +455,75 @@ ggplot(dataset, aes(x = TradeUnions_Density, y = residuals_non_linear)) +
   theme_minimal()
 ```
 
-#### 4.1 New variable creation: unions
+#### 4.1 Inference About "unions"
 
 ```{r}
-df <- df %>%
-  mutate(unions = sqrt(TradeUnions_Density) * log(CollectiveBargain_Coverage))
+# Assuming 'unions' is the column containing unions data
+unions_variable <- 'unions'
+
+# Summary statistics
+summary_stats <- summary(dataset[, unions_variable])
+
+# Quantiles
+quantiles <- quantile(dataset[, unions_variable])
+
+# Counts
+counts <- table(dataset[, unions_variable])
+
+# Combine all statistics into a data frame
+statistics <- data.frame(
+  Mean = mean(dataset[, unions_variable]),
+  Median = median(dataset[, unions_variable]),
+  Standard_Deviation = sd(dataset[, unions_variable]),
+  Minimum = min(dataset[, unions_variable]),
+  Maximum = max(dataset[, unions_variable]),
+  Q1 = quantiles[2],
+  Q3 = quantiles[4],
+  Counts = counts
+)
+
+statistics
+ggplot(dataset, aes(x = dataset[, unions_variable])) +
+  geom_histogram(binwidth = 1, fill = "blue", color = "black") +
+  labs(x = "Unions", y = "Frequency", 
+       title = "Histogram of Unions")
+
+
 ```
+
+#### 4.2 Check the variance of TradeUnions_Density and skewness of CollectiveBargain_Coverage
+
+```{r}
+# Check the variance of TradeUnions_Density
+var_TradeUnions_Density <- var(dataset$TradeUnions_Density)
+
+# Check the skewness of CollectiveBargain_Coverage
+skewness_CollectiveBargain_Coverage <- sum((log(dataset$CollectiveBargain_Coverage) - mean(log(dataset$CollectiveBargain_Coverage)))^3) / (length(dataset$CollectiveBargain_Coverage) * sd(log(dataset$CollectiveBargain_Coverage))^3)
+
+# Print results
+cat("Variance of TradeUnions_Density:", var_TradeUnions_Density, "\n")
+cat("Skewness of log(CollectiveBargain_Coverage):", skewness_CollectiveBargain_Coverage, "\n")
+
+# Visualize distribution of CollectiveBargain_Coverage
+ggplot(dataset, aes(x = log(CollectiveBargain_Coverage))) +
+  geom_histogram(binwidth = 0.05, fill = "lightblue", color = "black") +
+  labs(x = "log(CollectiveBargain_Coverage)", y = "Frequency", 
+       title = "Histogram of log(CollectiveBargain_Coverage)") + 
+  theme_minimal()
+
+ggplot(dataset, aes(x = TradeUnions_Density)) +
+  geom_histogram(binwidth = 1, fill = 'lightblue', color = "black") + 
+  theme_minimal()
+```
+
+```         
+Variance of TradeUnions_Density: 541.3063 
+Skewness of log(CollectiveBargain_Coverage): -1.008107 
+```
+
+The skewness of log(CollectiveBargain_Coverage) is -1.008107. A skewness value less than 0 indicates left skewness, meaning the distribution has a long left tail. In this case, the log-transformed values of CollectiveBargain_Coverage have a left-skewed distribution.
+
+It seems that CollectiveBargain_Coverage may benefit from a transformation to address its skewness. Depending on your analysis and the specific requirements of your regression model, you might consider applying a transformation such as the square root, cube root, or Box-Cox transformation to make the distribution more symmetric. Then, you can assess the impact of the transformation on your regression model's performance.
 
 ## **5. Plots**
 
@@ -413,38 +532,30 @@ library(ggplot2)
 ```
 
 ```{r}
-# make long dataset: df_long
-df_long <- pivot_longer(dataset, 
-                        cols = -c(Country, Year),  
-                        names_to = "Variable",
-                        values_to = "Value")
-```
-
-ungroup()
-
-```{r}
 YearIntroduced <- df_long %>%
   group_by(Country) %>%
   filter(Variable == "lnminwage" & Value > 0) %>%
   slice(1) %>%
   ungroup()
+
 YearIntroduced <- dataset %>%
   group_by(Country) %>%
-  mutate(YearIntroduced = ifelse(lnminwage > 0, 1, 0))  
+  mutate(YearIntroduced = ifelse(lnminwage > 0, 1, 0)) 
+
 ```
 
 ```{r}
 # Plot with YearIntroduced
 b <- ggplot(dataset, aes(x = Year)) +
-  geom_line(aes(y = Gini_Index, color = "Gini Index"), linetype = "solid") +
-  geom_line(aes(y = TradeUnions_Density, color = "Trade Union Density"), linetype = "dashed") +
-  facet_wrap(~ Country, scales = "free_y", nrow = 5) +
-  labs(title = "Gini Index and Trade Union Density Over Time by Country",
-       y = "Value",
-       x = "Year",
-       color = "Indicator") +
-  theme_minimal() +
-  theme(legend.position = "bottom")
+        geom_line(aes(y = Gini_Index, color = "Gini Index"), linetype = "solid") +
+        geom_line(aes(y = TradeUnions_Density, color = "Trade Union Density"), linetype = "dashed") +
+        facet_wrap(~ Country, scales = "free_y", nrow = 5) +
+        labs(title = "Gini Index and Trade Union Density Over Time by Country",
+             y = "Value",
+             x = "Year",
+             color = "Indicator") +
+        theme_minimal() +
+        theme(legend.position = "bottom")
 b
 ```
 
@@ -530,7 +641,7 @@ j <- ggplot(dataset, aes(x = Year)) +
 ggsave(filename = "/Users/jacopobinati/Desktop/thesis/Images/womenunemploy_density.png", plot = j, width = 10, height = 6)
 ```
 
-#### 4.2 K-means clustering and plotting
+#### 5.2 K-means clustering and plotting
 
 Why this? this shows how coverage and density spread over time for each country. what's meaningful is to see that a perfect proportion would follow the red line but in most of the cases we find high coverage and low density, showing low protection of workers from trade unions.
 
@@ -563,7 +674,7 @@ g <- ggplot(df, aes(x = TradeUnions_Density, y = CollectiveBargain_Coverage, col
 ggsave(filename = "/Users/jacopobinati/Desktop/thesis/Images/kmeanclustering_densityCoverage.png", plot = g, width = 10, height = 6)
 ```
 
-#### 4.3 Plot the average values of demo, civsoc_particip, and rol over time
+#### 5.3 Plot the average values of demo, civsoc_particip, and rol over time
 
 ```{r}
 ggplot() +
@@ -652,20 +763,24 @@ ggsave(filename = "/Users/jacopobinati/Desktop/thesis/Images/netExportsFDI.png",
 library(xtable)
 ```
 
+#### 5.1 Eigenvalue Test
+
 ```{r}
 # Check for multicollinearity using the eigenvalue test
-correlation_matrix <- cor(dataset[, c("demo", "unions","CollectiveBargain_Coverage", "Inflation", "WageGrowth", "Gov_debt", "ln_labor", "WomenUnemployment_rate", "net_export", "net_FDI", "Tax_contribution")])
+correlation_matrix <- cor(dataset[, c("demo", "unions", "Inflation", "WageGrowth", "Gov_debt", "ln_labor", "WomenUnemployment_rate", "net_export", "net_FDI", "Tax_contribution")])
 eigenvalues <- eigen(correlation_matrix)$values
 print(eigenvalues)
 ```
 
+#### 5.2 VIF Test
+
 ```{r}
 # Check for multicollinearity using the VIF function
-vif_values <- car::vif(lm(Gini_Index ~ demo + unions + CollectiveBargain_Coverage + Inflation + WageGrowth + Gov_debt + ln_labor + WomenUnemployment_rate + net_export + net_FDI + Tax_contribution, data = dataset))
+vif_values <- car::vif(lm(Gini_Index ~ demo + unions + Inflation + WageGrowth + Gov_debt + ln_labor + WomenUnemployment_rate + net_export + net_FDI + Tax_contribution, data = dataset))
 ```
 
 ```{r}
-independent_vars <- c("demo", "unions", "CollectiveBargain_Coverage", "Inflation", "WageGrowth", "Gov_debt", "ln_labor", "WomenUnemployment_rate", "net_export", "net_FDI", "Tax_contribution")
+independent_vars <- c("demo", "unions", "Inflation", "WageGrowth", "Gov_debt", "ln_labor", "WomenUnemployment_rate", "net_export", "net_FDI", "Tax_contribution")
 
 vif_df <- data.frame(VIF = vif_values)
 vif_df
@@ -674,8 +789,7 @@ vif_df
 The output shows the VIF values for each independent variable. VIF values below 5 are generally considered acceptable, indicating that multicollinearity is not severe. In this case, all VIF values are below 5, suggesting that multicollinearity is not a significant concern among the predictor variables in the model. However, it's essential to interpret these results in conjunction with other diagnostics and consider the context of the analysis.
 
 ```{r}
-library(xtable)
-independent_vars <- c("Democratic Governance", "Trade Unions", "Collective Bargain Coverage", "Inflation", "Wage Growth", "Government Debt (%)", "Log of Labor participation", "Women Unemployment Rate", "Net Export", "Net FDI", "Tax Contribution")
+independent_vars <- c("Democratic Governance", "Trade Unions", "Inflation", "Wage Growth", "Government Debt (%)", "Log of Labor participation", "Women Unemployment Rate", "Net Export", "Net FDI", "Tax Contribution")
 # Create dataframe with eigenvalues and VIF values
 eigen_vif_df <- data.frame(variables = independent_vars, Eigenvalue = eigenvalues, VIF = vif_values)
 
@@ -787,7 +901,7 @@ print(FE_summary, file = file_path_FE)
 
 ```
 
-## 6. 1 Two-Ways Fixed Effect with Instrumental Variable
+## 6.1 Two-Ways Fixed Effect with Instrumental Variable
 
 ```{r}
 library(Matrix)
@@ -807,7 +921,6 @@ summary(second_stage)
 ```
 
 ```{r}
-library(xtable)
 first_stage_summary <- summary(first_stage)
 second_stage_summary <- summary(second_stage)
 # Convert summaries to LaTeX format
@@ -843,12 +956,6 @@ model6_formula <- ivreg(Gini_Index ~ unions + Inflation + WageGrowth + lnminwage
 model4 <- summary(model4_formula)
 model5 <- summary(model5_formula)
 model6 <- summary(model6_formula)
-
-# Display the summaries
-print(model4)
-print(model5)
-print(model6)
-stargazer(model4_formula, model5_formula, model6_formula, type="text")
 ```
 
 ```{r}
@@ -861,4 +968,34 @@ file_path_models <- "/Users/jacopobinati/Desktop/thesis/results/models_table.tex
 models_table <- stargazer(models_list, type = "text", title = "Two Ways Fixed Effect + IV Regression Models", header = FALSE)
 
 cat(models_table, file = file_path_models)
+```
+
+```{r}
+
+```
+
+## 7. Forecasting Trade Unions Density and Gini Index over time using Prophet from Facebook
+
+```{r}
+library(prophet)
+library(tidyverse)
+library(urca)
+```
+
+```{r}
+#stationarity check for both variables
+# Function to perform ADF test for stationarity
+adf_test <- function(data, variable) {
+  adf_result <- ur.df(data[[variable]], type = "drift", lags = 4)
+  summary(adf_result)
+}
+
+# Perform ADF test for 'TradeUnions_Density'
+adf_test_result_trade_unions <- adf_test(dataset, 'TradeUnions_Density')
+
+# Perform ADF test for 'Gini_Index'
+adf_test_result_gini <- adf_test(dataset, 'Gini_Index')
+
+adf_test_result_trade_unions
+adf_test_result_gini
 ```
