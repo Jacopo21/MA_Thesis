@@ -183,24 +183,30 @@ df <- df %>%
   mutate(unions = sqrt(TradeUnions_Density) * log(CollectiveBargain_Coverage))
 ```
 
-#### 2.2 Creation of other interaction variable between density and coverage 
+#### 2.2 Creation of other interaction variable between density and coverage
 
 ```{r}
 dataset <- dataset %>%
-  mutate(u1 = TradeUnions_Density/CollectiveBargain_Coverage)
+  mutate(densityOcoverage = TradeUnions_Density/CollectiveBargain_Coverage)
 dataset <- dataset %>%
-  mutate(u2 = TradeUnions_Density^2)
+  mutate(density2 = TradeUnions_Density^2)
 dataset <- dataset %>%
-  mutate(u3 = CollectiveBargain_Coverage/TradeUnions_Density)
+  mutate(coverage0density = CollectiveBargain_Coverage/TradeUnions_Density)
+dataset <- dataset %>%
+  mutate(density3 = TradeUnions_Density^3)
+dataset <- dataset %>%
+  mutate(sqdensity = sqrt(TradeUnions_Density))
 ```
 
 ```{r}
+library(stargazer)
+library(plm)
 f1 <- c(
-  "Gini_Index ~ u3 + Inflation + WageGrowth + lnminwage + CollectiveBargain_Coverage + lnGDP + Gov_debt + ln_labor + Female_Workers + Parttime_employment + WomenUnemployment_rate",
+  "Gini_Index ~ density2 + Inflation + WageGrowth + lnminwage + CollectiveBargain_Coverage + lnGDP + Gov_debt + ln_labor + Female_Workers + Parttime_employment + WomenUnemployment_rate",
   
-  "Gini_Index ~ u3 + Inflation + WageGrowth + lnminwage + CollectiveBargain_Coverage + lnGDP + Gov_debt + ln_labor + Female_Workers + Parttime_employment + WomenUnemployment_rate + net_export",
+  "Gini_Index ~ density2 + Inflation + WageGrowth + lnminwage + CollectiveBargain_Coverage + lnGDP + Gov_debt + ln_labor + Female_Workers + Parttime_employment + WomenUnemployment_rate + net_export",
   
-  "Gini_Index ~ u3 + Inflation + WageGrowth + lnminwage + CollectiveBargain_Coverage + lnGDP + Gov_debt + ln_labor + Female_Workers + Parttime_employment + WomenUnemployment_rate + net_export + net_FDI + Tax_contribution"
+  "Gini_Index ~ density2 + Inflation + WageGrowth + lnminwage + CollectiveBargain_Coverage + lnGDP + Gov_debt + ln_labor + Female_Workers + Parttime_employment + WomenUnemployment_rate + net_export + net_FDI + Tax_contribution"
 )
 
 create_models <- function(data, type, formulas) {
@@ -525,6 +531,73 @@ The skewness of log(CollectiveBargain_Coverage) is -1.008107. A skewness value l
 
 It seems that CollectiveBargain_Coverage may benefit from a transformation to address its skewness. Depending on your analysis and the specific requirements of your regression model, you might consider applying a transformation such as the square root, cube root, or Box-Cox transformation to make the distribution more symmetric. Then, you can assess the impact of the transformation on your regression model's performance.
 
+#### 4.3 Which of the interactions better perform?
+
+```{r}
+# Fit linear models
+model_unions <- lm(Gini_Index ~ unions, data = dataset)
+model_u1 <- lm(Gini_Index ~ u1, data = dataset)
+model_u2 <- lm(Gini_Index ~ u2, data = dataset)
+model_u3 <- lm(Gini_Index ~ u3, data = dataset)
+
+# Calculate AIC and BIC for each model
+aic_unions <- AIC(model_unions)
+aic_u1 <- AIC(model_u1)
+aic_u2 <- AIC(model_u2)
+aic_u3 <- AIC(model_u3)
+
+bic_unions <- BIC(model_unions)
+bic_u1 <- BIC(model_u1)
+bic_u2 <- BIC(model_u2)
+bic_u3 <- BIC(model_u3)
+
+# Compare AIC and BIC values
+aic_values <- c(aic_unions, aic_u1, aic_u2, aic_u3)
+bic_values <- c(bic_unions, bic_u1, bic_u2, bic_u3)
+model_names <- c("model_unions", "model_u1", "model_u2", "model_u3")
+
+# Create a summary dataframe
+comparison_df <- data.frame(
+  Model = model_names,
+  AIC = aic_values,
+  BIC = bic_values
+)
+
+# Print the comparison
+print(comparison_df)
+
+# Find the model with the lowest AIC and BIC
+best_model_aic <- model_names[which.min(aic_values)]
+best_model_bic <- model_names[which.min(bic_values)]
+
+cat("The best model according to AIC is:", best_model_aic, "\n")
+cat("The best model according to BIC is:", best_model_bic, "\n")
+
+```
+
++--------------+----------+----------+-------+-------+
+| Model        | AIC      | BIC      |       |       |
+|              |          |          |       |       |
+| \<chr\>      | \<dbl\>  | \<dbl\>  |       |       |
++:=============+=========:+=========:+=======+=======+
+| model_unions | 3858.953 | 3872.716 |       |       |
++--------------+----------+----------+-------+-------+
+| model_u1     | 4105.271 | 4119.034 |       |       |
++--------------+----------+----------+-------+-------+
+| model_u2     | 3847.915 | 3861.677 |       |       |
++--------------+----------+----------+-------+-------+
+| model_u3     | 4075.807 | 4089.570 |       |       |
++--------------+----------+----------+-------+-------+
+
+```         
+The best model according to AIC is: model_u2 
+The best model according to BIC is: model_u2 
+```
+
+```{r}
+ggplot(aes()))
+```
+
 ## **5. Plots**
 
 ```{r}
@@ -767,7 +840,7 @@ library(xtable)
 
 ```{r}
 # Check for multicollinearity using the eigenvalue test
-correlation_matrix <- cor(dataset[, c("demo", "unions", "Inflation", "WageGrowth", "Gov_debt", "ln_labor", "WomenUnemployment_rate", "net_export", "net_FDI", "Tax_contribution")])
+correlation_matrix <- cor(dataset[, c("demo", "density2", "Inflation", "WageGrowth", "Gov_debt", "ln_labor", "WomenUnemployment_rate", "net_export", "net_FDI", "Tax_contribution")])
 eigenvalues <- eigen(correlation_matrix)$values
 print(eigenvalues)
 ```
@@ -776,7 +849,7 @@ print(eigenvalues)
 
 ```{r}
 # Check for multicollinearity using the VIF function
-vif_values <- car::vif(lm(Gini_Index ~ demo + unions + Inflation + WageGrowth + Gov_debt + ln_labor + WomenUnemployment_rate + net_export + net_FDI + Tax_contribution, data = dataset))
+vif_values <- car::vif(lm(Gini_Index ~ demo + density2 + Inflation + WageGrowth + Gov_debt + ln_labor + WomenUnemployment_rate + net_export + net_FDI + Tax_contribution, data = dataset))
 ```
 
 ```{r}
@@ -807,7 +880,7 @@ write.table(eigen_vif_df, file = file_path, sep = "\t", quote = FALSE, row.names
 ```
 
 ```{r}
-variables <- dataset[, c("Gini_Index", "demo", "unions", "Inflation", "WageGrowth", 
+variables <- dataset[, c("Gini_Index", "demo", "density2", "Inflation", "WageGrowth", 
                          "Gov_debt", "lnminwage", "lnGDP", 
                          "WomenUnemployment_rate", 
                          "Female_Workers","Parttime_employment", "net_export", "net_FDI")]
@@ -850,17 +923,17 @@ Creating first models for OLS, FE, and FD:
 
 ```{r}
 model_formulas <- c(
-  "Gini_Index ~ TradeUnions_Density + unions + Inflation + WageGrowth + lnminwage",
+  "Gini_Index ~ density2 + Inflation + WageGrowth + lnminwage",
   
-  "Gini_Index ~ TradeUnions_Density + unions + Inflation + WageGrowth + lnminwage + CollectiveBargain_Coverage",
+  "Gini_Index ~ density2 + Inflation + WageGrowth + lnminwage + CollectiveBargain_Coverage",
   
-  "Gini_Index ~ TradeUnions_Density + unions + Inflation + WageGrowth + lnminwage + CollectiveBargain_Coverage + lnGDP + Gov_debt",
+  "Gini_Index ~ density2 + Inflation + WageGrowth + lnminwage + CollectiveBargain_Coverage + lnGDP + Gov_debt",
   
-  "Gini_Index ~ TradeUnions_Density + unions + Inflation + WageGrowth + lnminwage + CollectiveBargain_Coverage + lnGDP + Gov_debt + ln_labor + Female_Workers + Parttime_employment + WomenUnemployment_rate",
+  "Gini_Index ~ density2 + Inflation + WageGrowth + lnminwage + CollectiveBargain_Coverage + lnGDP + Gov_debt + ln_labor + Female_Workers + Parttime_employment + WomenUnemployment_rate",
   
-  "Gini_Index ~ TradeUnions_Density + unions + Inflation + WageGrowth + lnminwage + CollectiveBargain_Coverage + lnGDP + Gov_debt + ln_labor + Female_Workers + Parttime_employment + WomenUnemployment_rate + net_export",
+  "Gini_Index ~ density2 + Inflation + WageGrowth + lnminwage + CollectiveBargain_Coverage + lnGDP + Gov_debt + ln_labor + Female_Workers + Parttime_employment + WomenUnemployment_rate + net_export",
   
-  "Gini_Index ~ TradeUnions_Density + unions + Inflation + WageGrowth + lnminwage + CollectiveBargain_Coverage + lnGDP + Gov_debt + ln_labor + Female_Workers + Parttime_employment + WomenUnemployment_rate + net_export + net_FDI + Tax_contribution"
+  "Gini_Index ~ density2 + Inflation + WageGrowth + lnminwage + CollectiveBargain_Coverage + lnGDP + Gov_debt + ln_labor + Female_Workers + Parttime_employment + WomenUnemployment_rate + net_export + net_FDI + Tax_contribution"
 )
 
 create_models <- function(data, type, formulas) {
@@ -910,7 +983,7 @@ library(lfe)
 
 ```{r}
 library(lmtest)
-first_stage <- lm(unions ~ demo + CollectiveBargain_Coverage + Inflation + WageGrowth + Gov_debt + ln_labor + WomenUnemployment_rate, data = dataset)
+first_stage <- lm(density2 ~ demo + CollectiveBargain_Coverage + Inflation + WageGrowth + Gov_debt + ln_labor + WomenUnemployment_rate, data = dataset)
 summary(first_stage)
 
 dataset$unions_fitted <- predict(first_stage, newdata = dataset)
@@ -946,11 +1019,12 @@ In summary, the first stage estimates the relationship between the instruments a
 This two-stage process is fundamental in instrumental variable regression to obtain unbiased estimates of causal effects in the presence of endogeneity.
 
 ```{r}
-model4_formula <- ivreg(Gini_Index ~ unions + Inflation + WageGrowth + lnminwage + lnGDP + Gov_debt + ln_labor + Female_Workers + Parttime_employment + WomenUnemployment_rate | TradeUnions_Density + demo + Inflation + WageGrowth + lnminwage + CollectiveBargain_Coverage + lnGDP + Gov_debt + ln_labor + Female_Workers + Parttime_employment + WomenUnemployment_rate, data = dataset)
+library(AER)
+model4_formula <- ivreg(Gini_Index ~ density2 + CollectiveBargain_Coverage + Inflation + WageGrowth + lnminwage + lnGDP + Gov_debt + ln_labor + Female_Workers + Parttime_employment + WomenUnemployment_rate | TradeUnions_Density + demo + Inflation + WageGrowth + lnminwage + CollectiveBargain_Coverage + lnGDP + Gov_debt + ln_labor + Female_Workers + Parttime_employment + WomenUnemployment_rate, data = dataset)
 
-model5_formula <- ivreg(Gini_Index ~ unions + Inflation + WageGrowth + lnminwage + lnGDP + Gov_debt + ln_labor + Female_Workers + Parttime_employment + WomenUnemployment_rate + net_export | TradeUnions_Density + demo + Inflation + WageGrowth + lnminwage + CollectiveBargain_Coverage + lnGDP + Gov_debt + ln_labor + Female_Workers + Parttime_employment + WomenUnemployment_rate + net_export, data = dataset)
+model5_formula <- ivreg(Gini_Index ~ density2 + CollectiveBargain_Coverage + Inflation + WageGrowth + lnminwage + lnGDP + Gov_debt + ln_labor + Female_Workers + Parttime_employment + WomenUnemployment_rate + net_export | TradeUnions_Density + demo + Inflation + WageGrowth + lnminwage + CollectiveBargain_Coverage + lnGDP + Gov_debt + ln_labor + Female_Workers + Parttime_employment + WomenUnemployment_rate + net_export, data = dataset)
 
-model6_formula <- ivreg(Gini_Index ~ unions + Inflation + WageGrowth + lnminwage + lnGDP + Gov_debt + ln_labor + Female_Workers + Parttime_employment + WomenUnemployment_rate + net_export + net_FDI + Tax_contribution | TradeUnions_Density + demo + Inflation + WageGrowth + lnminwage + CollectiveBargain_Coverage + lnGDP + Gov_debt + ln_labor + Female_Workers + Parttime_employment + WomenUnemployment_rate + net_export + net_FDI + Tax_contribution, data = dataset)
+model6_formula <- ivreg(Gini_Index ~ density2 + CollectiveBargain_Coverage + Inflation + WageGrowth + lnminwage + lnGDP + Gov_debt + ln_labor + Female_Workers + Parttime_employment + WomenUnemployment_rate + net_export + net_FDI + Tax_contribution | TradeUnions_Density + demo + Inflation + WageGrowth + lnminwage + CollectiveBargain_Coverage + lnGDP + Gov_debt + ln_labor + Female_Workers + Parttime_employment + WomenUnemployment_rate + net_export + net_FDI + Tax_contribution, data = dataset)
 
 # Estimate the models
 model4 <- summary(model4_formula)
