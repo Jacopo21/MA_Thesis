@@ -186,55 +186,17 @@ df <- df %>%
 #### 2.2 Creation of other interaction variable between density and coverage
 
 ```{r}
-dataset <- dataset %>%
+df <- df %>%
   mutate(densityOcoverage = TradeUnions_Density/CollectiveBargain_Coverage)
-dataset <- dataset %>%
+df <- df %>%
   mutate(density2 = TradeUnions_Density^2)
-dataset <- dataset %>%
+df <- df %>%
   mutate(coverage0density = CollectiveBargain_Coverage/TradeUnions_Density)
-dataset <- dataset %>%
+df <- df %>%
   mutate(density3 = TradeUnions_Density^3)
-dataset <- dataset %>%
+df <- df %>%
   mutate(sqdensity = sqrt(TradeUnions_Density))
 ```
-
-```{r}
-library(stargazer)
-library(plm)
-f1 <- c(
-  "Gini_Index ~ density2 + Inflation + WageGrowth + lnminwage + CollectiveBargain_Coverage + lnGDP + Gov_debt + ln_labor + Female_Workers + Parttime_employment + WomenUnemployment_rate",
-  
-  "Gini_Index ~ density2 + Inflation + WageGrowth + lnminwage + CollectiveBargain_Coverage + lnGDP + Gov_debt + ln_labor + Female_Workers + Parttime_employment + WomenUnemployment_rate + net_export",
-  
-  "Gini_Index ~ density2 + Inflation + WageGrowth + lnminwage + CollectiveBargain_Coverage + lnGDP + Gov_debt + ln_labor + Female_Workers + Parttime_employment + WomenUnemployment_rate + net_export + net_FDI + Tax_contribution"
-)
-
-create_models <- function(data, type, formulas) {
-  lapply(formulas, function(formula) {
-    formula <- as.formula(formula)
-    if (type == "OLS") {
-      return(lm(formula, data = dataset))
-    } else if (type == "FE") {
-      return(plm(formula, data = dataset, model = "within"))
-    } else {
-      stop("Unknown model type")
-    }
-  })
-}
-
-# Create OLS, FE, and FD models
-ols_models <- create_models(df, "OLS", f1)
-fe_models <- create_models(pdata, "FE", f1)
-
-# Summarize the models
-stargazer(ols_models[c(1, 2, 3)], type = "text", title = "OLS Regression Models")
-stargazer(fe_models[c(1, 2, 3)], type = "text", title = "Fixed Effects Regression Models")
-
-```
-
-Why unions computed this way?
-
-Nonlinear transformation, potentially capturing complex relationships between them# Enhanced Interpretability: The transformed variable "unions" could potentially have a more interpretable relationship with the original variables. For example, the square root transformation may help to stabilize variance, while the logarithmic transformation may compress larger values, making the relationship easier to understand or visualize.
 
 ```{r}
 sapply(df, function(x) sum(is.na(x)) / length(x))
@@ -337,17 +299,57 @@ df_long <- tidyr::pivot_longer(dataset,
                                 values_to = "Value")
 ```
 
+```{r}
+library(stargazer)
+library(plm)
+```
+
+```{r}
+f1 <- c(
+  "Gini_Index ~ density2 + Inflation + WageGrowth + lnminwage + CollectiveBargain_Coverage + lnGDP + Gov_debt + ln_labor + Female_Workers + Parttime_employment + WomenUnemployment_rate",
+  
+  "Gini_Index ~ density2 + Inflation + WageGrowth + lnminwage + CollectiveBargain_Coverage + lnGDP + Gov_debt + ln_labor + Female_Workers + Parttime_employment + WomenUnemployment_rate + net_export",
+  
+  "Gini_Index ~ density2 + Inflation + WageGrowth + lnminwage + CollectiveBargain_Coverage + lnGDP + Gov_debt + ln_labor + Female_Workers + Parttime_employment + WomenUnemployment_rate + net_export + net_FDI + Tax_contribution"
+)
+
+create_models <- function(data, type, formulas) {
+  lapply(formulas, function(formula) {
+    formula <- as.formula(formula)
+    if (type == "OLS") {
+      return(lm(formula, data = dataset))
+    } else if (type == "FE") {
+      return(plm(formula, data = dataset, model = "within"))
+    } else {
+      stop("Unknown model type")
+    }
+  })
+}
+
+# Create OLS, FE, and FD models
+ols_models <- create_models(df, "OLS", f1)
+fe_models <- create_models(pdata, "FE", f1)
+
+# Summarize the models
+stargazer(ols_models[c(1, 2, 3)], type = "text", title = "OLS Regression Models")
+stargazer(fe_models[c(1, 2, 3)], type = "text", title = "Fixed Effects Regression Models")
+```
+
+Why unions computed this way?
+
+Nonlinear transformation, potentially capturing complex relationships between them# Enhanced Interpretability: The transformed variable "unions" could potentially have a more interpretable relationship with the original variables. For example, the square root transformation may help to stabilize variance, while the logarithmic transformation may compress larger values, making the relationship easier to understand or visualize.
+
 ## 4. Density and Coverage linear or non linear relationship?
 
 ```{r}
-# plot TradeUnions_Density and CollectiveBargain_Coverage to understand if the relationship is linear or not
-ggplot(dataset, aes(x = TradeUnions_Density, y = CollectiveBargain_Coverage)) +
+# plot TradeUnions_Density and Gini_Index to understand if the relationship is linear or not
+ggplot(dataset, aes(x = TradeUnions_Density, y = Gini_Index)) +
   geom_point(alpha = 0.5) +
-  geom_smooth(method = "lm", color = "blue", se = FALSE) + # Linear fit
-  geom_smooth(method = "loess", color = "red", se = FALSE) + # Non-linear fit
-  labs(title = 'Trade Unions Density vs Collective Bargaining Coverage',
+  geom_smooth(method = "lm", color = "blue", se = FALSE) + 
+  geom_smooth(method = "loess", color = "red", se = FALSE) + 
+  labs(title = 'Trade Unions Density and Gini Index',
        x = 'Trade Unions Density',
-       y = 'Collective Bargaining Coverage') +
+       y = 'Gini Index') +
   theme_minimal()
 ```
 
@@ -357,15 +359,27 @@ library(plm)
 # Define the panel data structure
 pdata <- pdata.frame(dataset, index = c("Country", "Year"))
 # Fit a linear model
-linear_model <- plm(CollectiveBargain_Coverage ~ TradeUnions_Density, data = pdata, model = "within")
+linear_model <- plm(Gini_Index ~ TradeUnions_Density, data = pdata, model = "within")
 # Summarize the models
 summary(linear_model)
 ```
 
 ```{r}
 # Fit a non-linear model (e.g., quadratic term)
-non_linear_model <- plm(CollectiveBargain_Coverage ~ TradeUnions_Density + I(TradeUnions_Density^2), data = pdata, model = "within")
+non_linear_model <- plm(Gini_Index ~ TradeUnions_Density + I(TradeUnions_Density^2), data = pdata, model = "within")
 summary(non_linear_model)
+```
+
+```{r}
+stargazer(linear_model, non_linear_model, type = "latex", out = "model_results.tex",
+          title = "Regression Results",
+          covariate.labels = c("Trade Unions Density", "Trade Unions Density Squared"),
+          dep.var.labels = "Gini Index",
+          model.names = FALSE,
+          align = TRUE,
+          no.space = TRUE,
+          omit.stat = c("LL", "ser", "f"),
+          star.cutoffs = c(0.05, 0.01, 0.001))
 ```
 
 ```{r}
@@ -384,22 +398,33 @@ k_non_linear <- length(coef(non_linear_model))
 aic_non_linear <- n * log(rss_non_linear / n) + 2 * k_non_linear
 bic_non_linear <- n * log(rss_non_linear / n) + log(n) * k_non_linear
 
-# Compare AIC and BIC
-aic_linear
-aic_non_linear
-bic_linear
-bic_non_linear
+results <- data.frame(
+  Model = c("Linear Model", "Non-linear Model"),
+  AIC = c(aic_linear, aic_non_linear),
+  BIC = c(bic_linear, bic_non_linear)
+)
 
 # Print the results
 cat("Linear Model: AIC =", aic_linear, "BIC =", bic_linear, "\n")
 cat("Non-linear Model: AIC =", aic_non_linear, "BIC =", bic_non_linear, "\n")
 ```
 
+```{r}
+results_table <- xtable(results, caption = "AIC and BIC for Linear and Non-linear Models", label = "tab:aic_bic")
+
+# Save the table to a .tex file in the specified directory
+output_file <- "/Users/jacopobinati/Desktop/thesis/results/aic_bic_results.tex"
+print(results_table, file = output_file, type = "latex", include.rownames = FALSE)
+
+```
+
 The lower AIC and BIC values for the non-linear model suggest that the non-linear model provides a better fit to the data than the linear model. This indicates that the relationship between **`TradeUnions_Density`** and **`CollectiveBargain_Coverage`** is likely non-linear.
 
 ```{r}
+library(patchwork)
+
 # Plot residuals for the linear model
-ggplot(dataset, aes(x = TradeUnions_Density, y = residuals(linear_model))) +
+p1 <- ggplot(dataset, aes(x = TradeUnions_Density, y = residuals(linear_model))) +
   geom_point(alpha = 0.5) +
   geom_smooth(method = "loess", color = "red", se = FALSE) +
   labs(title = 'Residuals of Linear Model',
@@ -408,7 +433,7 @@ ggplot(dataset, aes(x = TradeUnions_Density, y = residuals(linear_model))) +
   theme_minimal()
 
 # Plot residuals for the non-linear model
-ggplot(dataset, aes(x = TradeUnions_Density, y = residuals(non_linear_model))) +
+p2 <- ggplot(dataset, aes(x = TradeUnions_Density, y = residuals(non_linear_model))) +
   geom_point(alpha = 0.5) +
   geom_smooth(method = "loess", color = "red", se = FALSE) +
   labs(title = 'Residuals of Non-linear Model',
@@ -416,6 +441,14 @@ ggplot(dataset, aes(x = TradeUnions_Density, y = residuals(non_linear_model))) +
        y = 'Residuals') +
   theme_minimal()
 
+# Combine the two plots into a subplot
+combined_plot <- p1 + p2 + plot_layout(ncol = 1)
+
+# Display the combined plot
+print(combined_plot)
+
+# Save the combined plot
+ggsave("/Users/jacopobinati/Desktop/thesis/Images/residuals_combined_plot.png", plot = combined_plot, width = 8, height = 12)
 ```
 
 ```{r}
@@ -424,9 +457,12 @@ dataset$fitted_linear <- fitted(linear_model)
 dataset$residuals_linear <- residuals(linear_model)
 dataset$fitted_non_linear <- fitted(non_linear_model)
 dataset$residuals_non_linear <- residuals(non_linear_model)
+```
 
+```{r}
+library(gridExtra)
 # Residuals vs Fitted for Linear Model
-ggplot(dataset, aes(x = fitted_linear, y = residuals_linear)) +
+p3 <- ggplot(dataset, aes(x = fitted_linear, y = residuals_linear)) +
   geom_point(alpha = 0.5) +
   geom_smooth(method = "loess", color = "red", se = FALSE) +
   labs(title = 'Residuals vs Fitted Values for Linear Model',
@@ -435,11 +471,14 @@ ggplot(dataset, aes(x = fitted_linear, y = residuals_linear)) +
   theme_minimal()
 
 # Q-Q Plot for Linear Model Residuals
-qqnorm(dataset$residuals_linear)
-qqline(dataset$residuals_linear, col = "red")
+p4 <- ggplot(dataset, aes(sample = residuals_linear)) +
+  geom_qq() +
+  geom_qq_line(color = "red") +
+  labs(title = 'Q-Q Plot for Linear Model Residuals') +
+  theme_minimal()
 
 # Residuals vs Fitted for Non-linear Model
-ggplot(dataset, aes(x = fitted_non_linear, y = residuals_non_linear)) +
+p5 <- ggplot(dataset, aes(x = fitted_non_linear, y = residuals_non_linear)) +
   geom_point(alpha = 0.5) +
   geom_smooth(method = "loess", color = "red", se = FALSE) +
   labs(title = 'Residuals vs Fitted Values for Non-linear Model',
@@ -448,17 +487,21 @@ ggplot(dataset, aes(x = fitted_non_linear, y = residuals_non_linear)) +
   theme_minimal()
 
 # Q-Q Plot for Non-linear Model Residuals
-qqnorm(dataset$residuals_non_linear)
-qqline(dataset$residuals_non_linear, col = "red")
-
-# Residuals vs Trade Unions Density for Non-linear Model
-ggplot(dataset, aes(x = TradeUnions_Density, y = residuals_non_linear)) +
-  geom_point(alpha = 0.5) +
-  geom_smooth(method = "loess", color = "red", se = FALSE) +
-  labs(title = 'Residuals vs Trade Unions Density for Non-linear Model',
-       x = 'Trade Unions Density',
-       y = 'Residuals') +
+p6 <- ggplot(dataset, aes(sample = residuals_non_linear)) +
+  geom_qq() +
+  geom_qq_line(color = "red") +
+  labs(title = 'Q-Q Plot for Non-linear Model Residuals') +
   theme_minimal()
+
+# Combine plots into a single subplot
+combined_plot1 <- grid.arrange(p3, p4, p5, p6, ncol = 2)
+
+# Display the combined plot
+print(combined_plot1)
+
+# Save the combined plot
+ggsave("/Users/jacopobinati/Desktop/thesis/Images/residuals_qq_combined_plot.png", plot = combined_plot1, width = 12, height = 8)
+
 ```
 
 #### 4.1 Inference About "unions"
@@ -536,9 +579,9 @@ It seems that CollectiveBargain_Coverage may benefit from a transformation to ad
 ```{r}
 # Fit linear models
 model_unions <- lm(Gini_Index ~ unions, data = dataset)
-model_u1 <- lm(Gini_Index ~ u1, data = dataset)
-model_u2 <- lm(Gini_Index ~ u2, data = dataset)
-model_u3 <- lm(Gini_Index ~ u3, data = dataset)
+model_u1 <- lm(Gini_Index ~ densityOcoverage, data = dataset)
+model_u2 <- lm(Gini_Index ~ density2, data = dataset)
+model_u3 <- lm(Gini_Index ~ coverage0density, data = dataset)
 
 # Calculate AIC and BIC for each model
 aic_unions <- AIC(model_unions)
@@ -575,27 +618,23 @@ cat("The best model according to BIC is:", best_model_bic, "\n")
 
 ```
 
-+--------------+----------+----------+-------+-------+
-| Model        | AIC      | BIC      |       |       |
-|              |          |          |       |       |
-| \<chr\>      | \<dbl\>  | \<dbl\>  |       |       |
-+:=============+=========:+=========:+=======+=======+
-| model_unions | 3858.953 | 3872.716 |       |       |
-+--------------+----------+----------+-------+-------+
-| model_u1     | 4105.271 | 4119.034 |       |       |
-+--------------+----------+----------+-------+-------+
-| model_u2     | 3847.915 | 3861.677 |       |       |
-+--------------+----------+----------+-------+-------+
-| model_u3     | 4075.807 | 4089.570 |       |       |
-+--------------+----------+----------+-------+-------+
++--------------+----------+----------+----------+----------+
+| Model        | AIC      | BIC      |          |          |
+|              |          |          |          |          |
+| \<chr\>      | \<dbl\>  | \<dbl\>  |          |          |
++:=============+=========:+=========:+==========+==========+
+| model_unions | 3858.953 | 3872.716 |          |          |
++--------------+----------+----------+----------+----------+
+| model_u1     | 4105.271 | 4119.034 |          |          |
++--------------+----------+----------+----------+----------+
+| model_u2     | 3847.915 | 3861.677 |          |          |
++--------------+----------+----------+----------+----------+
+| model_u3     | 4075.807 | 4089.570 |          |          |
++--------------+----------+----------+----------+----------+
 
 ```         
 The best model according to AIC is: model_u2 
 The best model according to BIC is: model_u2 
-```
-
-```{r}
-ggplot(aes()))
 ```
 
 ## **5. Plots**
@@ -840,7 +879,7 @@ library(xtable)
 
 ```{r}
 # Check for multicollinearity using the eigenvalue test
-correlation_matrix <- cor(dataset[, c("demo", "density2", "Inflation", "WageGrowth", "Gov_debt", "ln_labor", "WomenUnemployment_rate", "net_export", "net_FDI", "Tax_contribution")])
+correlation_matrix <- cor(dataset[, c("demo", "density2", "CollectiveBargain_Coverage","Inflation", "WageGrowth", "Gov_debt", "ln_labor", "WomenUnemployment_rate", "net_export", "net_FDI", "Tax_contribution")])
 eigenvalues <- eigen(correlation_matrix)$values
 print(eigenvalues)
 ```
@@ -849,7 +888,7 @@ print(eigenvalues)
 
 ```{r}
 # Check for multicollinearity using the VIF function
-vif_values <- car::vif(lm(Gini_Index ~ demo + density2 + Inflation + WageGrowth + Gov_debt + ln_labor + WomenUnemployment_rate + net_export + net_FDI + Tax_contribution, data = dataset))
+vif_values <- car::vif(lm(Gini_Index ~ demo + density2 + CollectiveBargain_Coverage + Inflation + WageGrowth + Gov_debt + ln_labor + WomenUnemployment_rate + net_export + net_FDI + Tax_contribution, data = dataset))
 ```
 
 ```{r}
@@ -862,9 +901,9 @@ vif_df
 The output shows the VIF values for each independent variable. VIF values below 5 are generally considered acceptable, indicating that multicollinearity is not severe. In this case, all VIF values are below 5, suggesting that multicollinearity is not a significant concern among the predictor variables in the model. However, it's essential to interpret these results in conjunction with other diagnostics and consider the context of the analysis.
 
 ```{r}
-independent_vars <- c("Democratic Governance", "Trade Unions", "Inflation", "Wage Growth", "Government Debt (%)", "Log of Labor participation", "Women Unemployment Rate", "Net Export", "Net FDI", "Tax Contribution")
+independent_vars <- c("Democratic Governance", "Trade Unions Density", "Bargaining Coverage", "Inflation", "Wage Growth", "Government Debt (%)", "Log of Labor participation", "Women Unemployment Rate", "Net Export", "Net FDI", "Tax Contribution")
 # Create dataframe with eigenvalues and VIF values
-eigen_vif_df <- data.frame(variables = independent_vars, Eigenvalue = eigenvalues, VIF = vif_values)
+eigen_vif_df <- data.frame(Variables = independent_vars, Eigenvalue = eigenvalues, VIF = vif_values)
 
 # Print the dataframe
 print(eigen_vif_df)
@@ -983,6 +1022,7 @@ library(lfe)
 
 ```{r}
 library(lmtest)
+library(zoo)
 first_stage <- lm(density2 ~ demo + CollectiveBargain_Coverage + Inflation + WageGrowth + Gov_debt + ln_labor + WomenUnemployment_rate, data = dataset)
 summary(first_stage)
 
@@ -1030,6 +1070,7 @@ model6_formula <- ivreg(Gini_Index ~ density2 + CollectiveBargain_Coverage + Inf
 model4 <- summary(model4_formula)
 model5 <- summary(model5_formula)
 model6 <- summary(model6_formula)
+summary(model6_formula)
 ```
 
 ```{r}
@@ -1044,11 +1085,13 @@ models_table <- stargazer(models_list, type = "text", title = "Two Ways Fixed Ef
 cat(models_table, file = file_path_models)
 ```
 
-```{r}
-
-```
-
 ## 7. Forecasting Trade Unions Density and Gini Index over time using Prophet from Facebook
+
+```{r}
+library(prophet)
+library(tidyverse)
+library(urca)
+```
 
 ```{r}
 library(prophet)
