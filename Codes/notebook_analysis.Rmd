@@ -410,6 +410,7 @@ cat("Non-linear Model: AIC =", aic_non_linear, "BIC =", bic_non_linear, "\n")
 ```
 
 ```{r}
+library(xtable)
 results_table <- xtable(results, caption = "AIC and BIC for Linear and Non-linear Models", label = "tab:aic_bic")
 
 # Save the table to a .tex file in the specified directory
@@ -659,15 +660,19 @@ YearIntroduced <- dataset %>%
 ```{r}
 # Plot with YearIntroduced
 b <- ggplot(dataset, aes(x = Year)) +
-        geom_line(aes(y = Gini_Index, color = "Gini Index"), linetype = "solid") +
-        geom_line(aes(y = TradeUnions_Density, color = "Trade Union Density"), linetype = "dashed") +
-        facet_wrap(~ Country, scales = "free_y", nrow = 5) +
-        labs(title = "Gini Index and Trade Union Density Over Time by Country",
-             y = "Value",
-             x = "Year",
-             color = "Indicator") +
-        theme_minimal() +
-        theme(legend.position = "bottom")
+  geom_line(aes(y = Gini_Index, color = "Gini Index"), linetype = "solid") +
+  geom_line(aes(y = TradeUnions_Density, color = "Trade Union Density"), linetype = "dashed") +
+  facet_wrap(~ Country, scales = "free_y", nrow = 5) +
+  labs(title = "Gini Index and Trade Union Density Over Time by Country",
+       y = "Value",
+       x = "Year",
+       color = "Indicator") +
+  theme_minimal() +
+  theme(legend.position = "bottom",
+        text = element_text(family = "Times New Roman", size = 12),
+        legend.text = element_text(family = "Times New Roman", size = 12),
+        legend.title = element_text(family = "Times New Roman", size = 12),
+        plot.title = element_text(family = "Times New Roman", size = 16))
 b
 ```
 
@@ -683,7 +688,12 @@ ggplot(df, aes(x = Gini_Index)) +
   ggtitle("Histogram of Gini Index") +
   xlab("Gini Index") +
   ylab("Frequency") +
-  theme_minimal()
+  theme_minimal() + 
+  theme(legend.position = "bottom",
+        text = element_text(family = "Times New Roman", size = 12),
+        legend.text = element_text(family = "Times New Roman", size = 12),
+        legend.title = element_text(family = "Times New Roman", size = 12),
+        plot.title = element_text(family = "Times New Roman", size = 16))
 ```
 
 ```{r}
@@ -700,7 +710,12 @@ ggplot(correlation_df, aes(x = Country, y = correlation)) +
   xlab("Country") +
   ylab("Correlation Coefficient") +
   theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  theme(legend.position = "bottom",
+        text = element_text(family = "Times New Roman", size = 12),
+        legend.text = element_text(family = "Times New Roman", size = 12),
+        legend.title = element_text(family = "Times New Roman", size = 12),
+        plot.title = element_text(family = "Times New Roman", size = 16))
 ```
 
 ```{r}
@@ -711,7 +726,12 @@ ggplot(average_gini, aes(x = Year, y = Gini_Index)) +
   labs(title = "Average Gini Index Over Time",
        x = "Year",
        y = "Average Gini Index") +
-  theme_minimal()
+  theme_minimal() +
+  theme(legend.position = "bottom",
+        text = element_text(family = "Times New Roman", size = 12),
+        legend.text = element_text(family = "Times New Roman", size = 12),
+        legend.title = element_text(family = "Times New Roman", size = 12),
+        plot.title = element_text(family = "Times New Roman", size = 16))
 
 # Second plot: Average Trade Union Density and Collective Bargaining Coverage over time
 p <- ggplot() +
@@ -725,10 +745,10 @@ p <- ggplot() +
                      labels = c("Collective Bargaining Coverage", "Trade Union Density")) +
   theme_minimal() +
   theme(legend.position = "bottom",
-        text = element_text(size = 16),  
-        legend.text = element_text(size = 20),  
-        legend.title = element_text(size = 20),
-        plot.title = element_text(size = 24),
+        text = element_text(family = "Times New Roman", size = 16),  
+        legend.text = element_text(family = "Times New Roman", size = 20),  
+        legend.title = element_text(family = "Times New Roman", size = 20),
+        plot.title = element_text(family = "Times New Roman", size = 24),
         axis.text.x = element_text(angle = 45, hjust = 1)) + # rotate x-axis labels
   ylim(20, 80)
 
@@ -749,7 +769,12 @@ j <- ggplot(dataset, aes(x = Year)) +
          x = "Year",
          color = "Variable") +
     theme_minimal() +
-    theme(legend.position = "bottom")
+    theme(legend.position = "bottom",
+        text = element_text(family = "Times New Roman", size = 12),
+        legend.text = element_text(family = "Times New Roman", size = 12),
+        legend.title = element_text(family = "Times New Roman", size = 12),
+        plot.title = element_text(family = "Times New Roman", size = 16))
+  
 ggsave(filename = "/Users/jacopobinati/Desktop/thesis/Images/womenunemploy_density.png", plot = j, width = 10, height = 6)
 ```
 
@@ -781,7 +806,12 @@ g <- ggplot(df, aes(x = TradeUnions_Density, y = CollectiveBargain_Coverage, col
   theme(
     plot.title = element_text(hjust = 0.5),
     legend.position = "bottom"
-  )
+  ) +
+  theme(legend.position = "bottom",
+        text = element_text(family = "Times New Roman", size = 12),
+        legend.text = element_text(family = "Times New Roman", size = 12),
+        legend.title = element_text(family = "Times New Roman", size = 12),
+        plot.title = element_text(family = "Times New Roman", size = 16))
 # Save the plot
 ggsave(filename = "/Users/jacopobinati/Desktop/thesis/Images/kmeanclustering_densityCoverage.png", plot = g, width = 10, height = 6)
 ```
@@ -801,10 +831,10 @@ ggplot() +
                      name = "Variable") + 
   theme_minimal() +
   theme(legend.position = "bottom",
-        text = element_text(size = 12),  
-        legend.text = element_text(size = 12),  
-        legend.title = element_text(size = 12),  
-        plot.title = element_text(size = 16))
+        text = element_text(family = "Times New Roman", size = 12),
+        legend.text = element_text(family = "Times New Roman", size = 12),
+        legend.title = element_text(family = "Times New Roman", size = 12),
+        plot.title = element_text(family = "Times New Roman", size = 16))
 
 ```
 
@@ -820,10 +850,10 @@ ggplot() +
                      labels = c("Density", "Democracy Index")) +
   theme_minimal() +
   theme(legend.position = "bottom",
-        text = element_text(size = 12),  
-        legend.text = element_text(size = 12),  
-        legend.title = element_text(size = 12),  
-        plot.title = element_text(size = 16))
+        text = element_text(family = "Times New Roman", size = 12),  
+        legend.text = element_text(family = "Times New Roman", size = 12),  
+        legend.title = element_text(family = "Times New Roman", size = 12),  
+        plot.title = element_text(family = "Times New Roman", size = 16))
 ```
 
 ```{r}
@@ -836,7 +866,11 @@ plot_fdi <- ggplot(dataset, aes(x = Year)) +
        x = "Year",
        color = "Indicator") +
   theme_minimal() +
-  theme(legend.position = "bottom")
+  theme(legend.position = "bottom",
+        text = element_text(family = "Times New Roman", size = 12),
+        legend.text = element_text(family = "Times New Roman", size = 12),
+        legend.title = element_text(family = "Times New Roman", size = 12),
+        plot.title = element_text(family = "Times New Roman", size = 16))
 
 # Plot for GDP over time
 plot_gdp <- ggplot(dataset, aes(x = Year)) +
@@ -847,7 +881,11 @@ plot_gdp <- ggplot(dataset, aes(x = Year)) +
        x = "Year",
        color = "Indicator") +
   theme_minimal() +
-  theme(legend.position = "bottom")
+  theme(legend.position = "bottom",
+        text = element_text(family = "Times New Roman", size = 12),
+        legend.text = element_text(family = "Times New Roman", size = 12),
+        legend.title = element_text(family = "Times New Roman", size = 12),
+        plot.title = element_text(family = "Times New Roman", size = 16))
 
 # Save the plots
 ggsave(filename = "/Users/jacopobinati/Desktop/thesis/Images/FDI.png", plot = plot_fdi, width = 10, height = 6)
@@ -865,15 +903,15 @@ net <- ggplot(dataset, aes(x = Year)) +
        x = "Year",
        color = "Indicator") +
   theme_minimal() +
-  theme(legend.position = "bottom")
+  theme(legend.position = "bottom",
+        text = element_text(family = "Times New Roman", size = 12),
+        legend.text = element_text(family = "Times New Roman", size = 12),
+        legend.title = element_text(family = "Times New Roman", size = 12),
+        plot.title = element_text(family = "Times New Roman", size = 16))
 ggsave(filename = "/Users/jacopobinati/Desktop/thesis/Images/netExportsFDI.png", plot = net, width = 10, height = 6)
 ```
 
 ## 5. Checking for Multicollinearity with Eigenvalue test and VIF
-
-```{r}
-library(xtable)
-```
 
 #### 5.1 Eigenvalue Test
 
@@ -932,6 +970,36 @@ heatmap(correlation_matrix,
         col = colorRampPalette(c("blue", "white", "red"))(100), 
         scale = "none", 
         main = "Correlation Heatmap") 
+```
+
+```{r}
+library(reshape2)
+variables <- dataset[, c("Gini_Index", "demo", "density2", "Inflation", "WageGrowth", 
+                          "Gov_debt", "lnminwage", "lnGDP", 
+                          "WomenUnemployment_rate", 
+                          "Female_Workers","Parttime_employment", "net_export", "net_FDI")]
+
+# Calculating the correlation coefficients
+correlation_matrix <- cor(variables)
+
+# Transform the correlation matrix into a long format
+melted_correlation_matrix <- melt(correlation_matrix)
+
+
+# Plotting the heatmap
+ggplot(data = melted_correlation_matrix, aes(x = Var1, y = Var2, fill = value)) +
+  geom_tile() +
+  scale_fill_gradient2(low = "blue", high = "red", mid = "white", 
+                       midpoint = 0, limit = c(-1, 1), space = "Lab", 
+                       name="Correlation") +
+  theme_minimal() +
+  labs(title = "Correlation Heatmap", x = "", y = "") +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, 
+                                   size = 12, hjust = 1),
+        axis.text.y = element_text(size = 12),
+        plot.title = element_text(size = 16, hjust = 0.5),
+        text = element_text(family = "Times New Roman")) +
+  coord_fixed()
 ```
 
 ## 6. Model Building
@@ -1017,21 +1085,69 @@ print(FE_summary, file = file_path_FE)
 
 ```{r}
 library(Matrix)
+library(AER)
 library(lfe)
 ```
+
+#### 6.1.1. Endogeneity Test
 
 ```{r}
 library(lmtest)
 library(zoo)
+
+# Perform the first-stage regression
 first_stage <- lm(density2 ~ demo + CollectiveBargain_Coverage + Inflation + WageGrowth + Gov_debt + ln_labor + WomenUnemployment_rate, data = dataset)
+
+# Relevance: Check if demo is statistically significant
 summary(first_stage)
 
-dataset$unions_fitted <- predict(first_stage, newdata = dataset)
-# Perform the second stage of the IV regression
-second_stage <- lm(Gini_Index ~ unions_fitted + CollectiveBargain_Coverage + Inflation + WageGrowth + Gov_debt + ln_labor + WomenUnemployment_rate + net_export, data = dataset)
-# Display the summary of the second-stage regression
+# Exogeneity: Check correlation between demo and residuals
+first_stage_residuals <- resid(first_stage)
+correlation_exogeneity <- cor(first_stage_residuals, dataset$demo)
+print(paste("Correlation between demo and residuals:", correlation_exogeneity))
+
+# Perform the second-stage regression
+second_stage <- lm(Gini_Index ~ demo + CollectiveBargain_Coverage + Inflation + WageGrowth + Gov_debt + ln_labor + WomenUnemployment_rate + net_export, data = dataset)
+
+# Exclusion Restriction: Check if demo is not statistically significant in the second-stage regression
 summary(second_stage)
 ```
+
+### **6.1.2 Detailed Explanations:**
+
+1.  **First-Stage Regression**:
+
+    -   This step regresses the endogenous variable (**`density2`**) on the instrument (**`demo`**) and other control variables.
+
+    -   The goal is to check if **`demo`** is a strong predictor of **`density2`**, thus validating its relevance.
+
+2.  **Relevance**:
+
+    -   In the first-stage regression, check the coefficient of **`demo`** to see if it is statistically significant (typically p-value \< 0.05).
+
+    -   A significant coefficient indicates that **`demo`** is relevant.
+
+3.  **Exogeneity**:
+
+    -   Residuals from the first-stage regression are computed.
+
+    -   The correlation between **`demo`** and these residuals is checked. A correlation close to zero supports the assumption that **`demo`** is exogenous (not correlated with the error term).
+
+    -    good instrumental variable is highly correlated with one or more of the explanatory variables while remaining uncorrelated with the errors.
+
+4.  **Second-Stage Regression**:
+
+    -   This step regresses the dependent variable (**`Gini_Index`**) on the predicted value of **`density2`** (obtained from the first stage) and other control variables.
+
+    -   **`demo`** is included in the model to test its exclusion restriction.
+
+5.  **Exclusion Restriction**:
+
+    -   By summarizing the second-stage regression, we check if **`demo`** is statistically significant in this model.
+
+    -   If **`demo`** is not significant, it supports the exclusion restriction assumption, meaning **`demo`** affects the **`Gini_Index`** only through **`density2`**.
+
+This commented code provides a clear framework for validating the instrumental variable and performing a two-stage least squares (2SLS) regression analysis to address endogeneity concerns in your econometric model.
 
 ```{r}
 first_stage_summary <- summary(first_stage)
