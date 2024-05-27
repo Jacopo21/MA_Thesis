@@ -1,19 +1,48 @@
-% latex table generated in R 4.4.0 by xtable 1.8-4 package
-% Mon May 20 17:23:13 2024
-\begin{table}[ht]
-\centering
-\begin{tabular}{rrrrr}
-  \hline
- & Estimate & Std. Error & t value & Pr($>$$|$t$|$) \\ 
-  \hline
-(Intercept) & 10797.8529 & 869.9721 & 12.41 & 0.0000 \\ 
-  demo & 4693.0794 & 590.5142 & 7.95 & 0.0000 \\ 
-  CollectiveBargain\_Coverage & 22.7360 & 2.3975 & 9.48 & 0.0000 \\ 
-  Inflation & 2.1491 & 0.8241 & 2.61 & 0.0093 \\ 
-  WageGrowth & 25.9635 & 19.2180 & 1.35 & 0.1771 \\ 
-  Gov\_debt & 8.6123 & 1.5585 & 5.53 & 0.0000 \\ 
-  ln\_labor & -948.3199 & 47.8356 & -19.82 & 0.0000 \\ 
-  WomenUnemployment\_rate & -46.3252 & 12.6097 & -3.67 & 0.0003 \\ 
-   \hline
-\end{tabular}
-\end{table}
+
+% Table created by stargazer v.5.2.3 by Marek Hlavac, Social Policy Institute. E-mail: marek.hlavac at gmail.com
+% Date and time: Mon, May 27, 2024 - 11:10:47
+\begin{table}[!htbp] \centering 
+  \caption{First-Stage Regression Results} 
+  \label{} 
+\begin{tabular}{@{\extracolsep{5pt}}lc} 
+\\[-1.8ex]\hline 
+\hline \\[-1.8ex] 
+ & \multicolumn{1}{c}{\textit{Dependent variable:}} \\ 
+\cline{2-2} 
+\\[-1.8ex] & density2 \\ 
+\hline \\[-1.8ex] 
+ Demo & 0.469$^{***}$ \\ 
+  & (0.059) \\ 
+  Collective Bargain Coverage & 0.227$^{***}$ \\ 
+  & (0.024) \\ 
+  Inflation & 0.0002$^{***}$ \\ 
+  & (0.0001) \\ 
+  Wage Growth & 0.003 \\ 
+  & (0.002) \\ 
+  Government Debt & 0.001$^{***}$ \\ 
+  & (0.0002) \\ 
+  Log Labor & $-$0.095$^{***}$ \\ 
+  & (0.005) \\ 
+  Women Unemployment Rate & $-$0.005$^{***}$ \\ 
+  & (0.001) \\ 
+  Constant & 1.080$^{***}$ \\ 
+  & (0.087) \\ 
+ \hline \\[-1.8ex] 
+Country & No \\ 
+Year & No \\ 
+\hline \\[-1.8ex] 
+Observations & 726 \\ 
+R-squared & 0.526 \\ 
+Adjusted R-squared & 0.522 \\ 
+Residual Std. Error & 0.156 \\ 
+Correlation between demo and residuals & 0 \\ 
+Observations & 726 \\ 
+R$^{2}$ & 0.526 \\ 
+Adjusted R$^{2}$ & 0.522 \\ 
+Residual Std. Error & 0.156 (df = 718) \\ 
+F Statistic & 113.946$^{***}$ (df = 7; 718) \\ 
+\hline 
+\hline \\[-1.8ex] 
+\textit{Note:}  & \multicolumn{1}{r}{$^{*}$p$<$0.1; $^{**}$p$<$0.05; $^{***}$p$<$0.01} \\ 
+\end{tabular} 
+\end{table} 
