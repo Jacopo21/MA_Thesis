@@ -198,7 +198,8 @@ df <- df %>%
     density2 = TradeUnions_Density^2,
     coverage0density = CollectiveBargain_Coverage / TradeUnions_Density,
     density3 = TradeUnions_Density^3,
-    sqdensity = sqrt(TradeUnions_Density)
+    sqdensity = sqrt(TradeUnions_Density),
+    WageGrowth2 = WageGrowth^2
   )
 
 # Summarize the new variables
@@ -437,7 +438,12 @@ p1 <- ggplot(dataset, aes(x = TradeUnions_Density, y = residuals(linear_model)))
   labs(title = 'Residuals of Linear Model',
        x = 'Trade Unions Density',
        y = 'Residuals') +
-  theme_minimal()
+  theme_minimal() + 
+  theme(
+        text = element_text(family = "Times New Roman", size = 12),
+        legend.text = element_text(family = "Times New Roman", size = 12),
+        legend.title = element_text(family = "Times New Roman", size = 12),
+        plot.title = element_text(family = "Times New Roman", size = 16))
 
 # Plot residuals for the non-linear model
 p2 <- ggplot(dataset, aes(x = TradeUnions_Density, y = residuals(non_linear_model))) +
@@ -446,7 +452,12 @@ p2 <- ggplot(dataset, aes(x = TradeUnions_Density, y = residuals(non_linear_mode
   labs(title = 'Residuals of Non-linear Model',
        x = 'Trade Unions Density',
        y = 'Residuals') +
-  theme_minimal()
+  theme_minimal() +
+  theme(
+        text = element_text(family = "Times New Roman", size = 12),
+        legend.text = element_text(family = "Times New Roman", size = 12),
+        legend.title = element_text(family = "Times New Roman", size = 12),
+        plot.title = element_text(family = "Times New Roman", size = 16))
 
 # Combine the two plots into a subplot
 combined_plot <- p1 + p2 + plot_layout(ncol = 1)
@@ -475,14 +486,24 @@ p3 <- ggplot(dataset, aes(x = fitted_linear, y = residuals_linear)) +
   labs(title = 'Residuals vs Fitted Values for Linear Model',
        x = 'Fitted Values',
        y = 'Residuals') +
-  theme_minimal()
+  theme_minimal()+
+  theme(
+        text = element_text(family = "Times New Roman", size = 12),
+        legend.text = element_text(family = "Times New Roman", size = 12),
+        legend.title = element_text(family = "Times New Roman", size = 12),
+        plot.title = element_text(family = "Times New Roman", size = 16))
 
 # Q-Q Plot for Linear Model Residuals
 p4 <- ggplot(dataset, aes(sample = residuals_linear)) +
   geom_qq() +
   geom_qq_line(color = "red") +
   labs(title = 'Q-Q Plot for Linear Model Residuals') +
-  theme_minimal()
+  theme_minimal()+
+  theme(
+        text = element_text(family = "Times New Roman", size = 12),
+        legend.text = element_text(family = "Times New Roman", size = 12),
+        legend.title = element_text(family = "Times New Roman", size = 12),
+        plot.title = element_text(family = "Times New Roman", size = 16))
 
 # Residuals vs Fitted for Non-linear Model
 p5 <- ggplot(dataset, aes(x = fitted_non_linear, y = residuals_non_linear)) +
@@ -491,14 +512,24 @@ p5 <- ggplot(dataset, aes(x = fitted_non_linear, y = residuals_non_linear)) +
   labs(title = 'Residuals vs Fitted Values for Non-linear Model',
        x = 'Fitted Values',
        y = 'Residuals') +
-  theme_minimal()
+  theme_minimal()+
+  theme(
+        text = element_text(family = "Times New Roman", size = 12),
+        legend.text = element_text(family = "Times New Roman", size = 12),
+        legend.title = element_text(family = "Times New Roman", size = 12),
+        plot.title = element_text(family = "Times New Roman", size = 16))
 
 # Q-Q Plot for Non-linear Model Residuals
 p6 <- ggplot(dataset, aes(sample = residuals_non_linear)) +
   geom_qq() +
   geom_qq_line(color = "red") +
   labs(title = 'Q-Q Plot for Non-linear Model Residuals') +
-  theme_minimal()
+  theme_minimal()+
+  theme(
+        text = element_text(family = "Times New Roman", size = 12),
+        legend.text = element_text(family = "Times New Roman", size = 12),
+        legend.title = element_text(family = "Times New Roman", size = 12),
+        plot.title = element_text(family = "Times New Roman", size = 16))
 
 # Combine plots into a single subplot
 combined_plot1 <- grid.arrange(p3, p4, p5, p6, ncol = 2)
@@ -636,19 +667,19 @@ cat("The best model according to BIC is:", best_model_bic, "\n")
 |     |     |     |     |     |
 |     |     |     |     |     |
 
-+----------+-----------+-----------+---+---+
-|          |           |           |   |   |
-+----------+-----------+-----------+---+---+
-| Model    | AIC       | BIC       |   |   |
-|          |           |           |   |   |
-| \<chr\>  | \<dbl\>   | \<dbl\>   |   |   |
-+----------+-----------+-----------+---+---+
-| model_u1 | -2581.436 | -2567.673 |   |   |
-+----------+-----------+-----------+---+---+
-| model_u2 | -2838.792 | -2825.030 |   |   |
-+----------+-----------+-----------+---+---+
-| model_u3 | -2610.900 | -2597.137 |   |   |
-+----------+-----------+-----------+---+---+
++----------+-----------+-----------+-------+-------+
+|          |           |           |       |       |
++----------+-----------+-----------+-------+-------+
+| Model    | AIC       | BIC       |       |       |
+|          |           |           |       |       |
+| \<chr\>  | \<dbl\>   | \<dbl\>   |       |       |
++----------+-----------+-----------+-------+-------+
+| model_u1 | -2581.436 | -2567.673 |       |       |
++----------+-----------+-----------+-------+-------+
+| model_u2 | -2838.792 | -2825.030 |       |       |
++----------+-----------+-----------+-------+-------+
+| model_u3 | -2610.900 | -2597.137 |       |       |
++----------+-----------+-----------+-------+-------+
 
 ```         
 The best model according to AIC is: model_u2 
@@ -691,6 +722,28 @@ b <- ggplot(dataset, aes(x = Year)) +
         legend.title = element_text(family = "Times New Roman", size = 12),
         plot.title = element_text(family = "Times New Roman", size = 16))
 b
+```
+
+```{r}
+data4 <- data.frame(average_trade_union = average_trade_union, average_gini = average_gini)
+
+x <- ggplot(data4, aes(x = average_trade_union.TradeUnions_Density, y = average_gini.Gini_Index)) +
+  geom_smooth(aes(color = "Linear Regression"), method = "lm", se = FALSE) +
+  geom_smooth(aes(color = "Loess"), method = "loess", se = FALSE) + 
+  labs(x = "Average Trade Union Density", y = "Average Gini Index",
+       color = "Method") + 
+  ggtitle("Relationship between Trade Union Density and Gini Index") + 
+  theme_minimal() +
+  theme(legend.position = "bottom",
+        text = element_text(family = "Times New Roman", size = 12),
+        legend.text = element_text(family = "Times New Roman", size = 12),
+        legend.title = element_text(family = "Times New Roman", size = 12),
+        plot.title = element_text(family = "Times New Roman", size = 16)) +
+  scale_color_manual(values = c("black", "blue"),
+                     labels = c("Linear Regression", "Loess"))
+
+ggsave(filename = "/Users/jacopobinati/Desktop/thesis/Images/relationGini_Density.png", plot = x, width = 10, height = 6)
+print(x)
 ```
 
 ```{r}
@@ -923,7 +976,7 @@ ggplot() +
 ```
 
 ```{r}
-ggplot() +
+demo_density <- ggplot() +
   geom_line(data = average_norm_density, aes(x = Year, y = norm_density, color = "Density"), size = 1) +
   geom_line(data = average_norm_demo, aes(x = Year, y = norm_demo, color = "Democracy Index"), size = 1) +
   labs(title = "Average Normalized Density and Democracy Index Over Time",
@@ -938,6 +991,8 @@ ggplot() +
         legend.text = element_text(family = "Times New Roman", size = 12),  
         legend.title = element_text(family = "Times New Roman", size = 12),  
         plot.title = element_text(family = "Times New Roman", size = 16))
+ggsave(filename = "/Users/jacopobinati/Desktop/thesis/Images/demo_density.png", plot = demo_density, width = 10, height = 6)
+print(demo_density)
 ```
 
 ```{r}
@@ -1001,7 +1056,7 @@ ggsave(filename = "/Users/jacopobinati/Desktop/thesis/Images/netExportsFDI.png",
 
 ```{r}
 # Check for multicollinearity using the eigenvalue test
-correlation_matrix <- cor(dataset[, c("demo", "density2", "CollectiveBargain_Coverage","Inflation", "WageGrowth", "Gov_debt", "ln_labor", "WomenUnemployment_rate", "net_export", "net_FDI", "Tax_contribution")])
+correlation_matrix <- cor(dataset[, c("demo", "density2", "CollectiveBargain_Coverage","Inflation", "WageGrowth2", "Gov_debt", "ln_labor", "WomenUnemployment_rate", "net_export", "net_FDI", "Tax_contribution")])
 eigenvalues <- eigen(correlation_matrix)$values
 print(eigenvalues)
 ```
@@ -1010,11 +1065,11 @@ print(eigenvalues)
 
 ```{r}
 # Check for multicollinearity using the VIF function
-vif_values <- car::vif(lm(Gini_Index ~ demo + density2 + CollectiveBargain_Coverage + Inflation + WageGrowth + Gov_debt + ln_labor + WomenUnemployment_rate + net_export + net_FDI + Tax_contribution, data = dataset))
+vif_values <- car::vif(lm(Gini_Index ~ demo + density2 + CollectiveBargain_Coverage + Inflation + WageGrowth2 + Gov_debt + ln_labor + WomenUnemployment_rate + net_export + net_FDI + Tax_contribution, data = dataset))
 ```
 
 ```{r}
-independent_vars <- c("demo", "unions", "Inflation", "WageGrowth", "Gov_debt", "ln_labor", "WomenUnemployment_rate", "net_export", "net_FDI", "Tax_contribution")
+independent_vars <- c("demo", "unions", "Inflation", "WageGrowth2", "Gov_debt", "ln_labor", "WomenUnemployment_rate", "net_export", "net_FDI", "Tax_contribution")
 
 vif_df <- data.frame(VIF = vif_values)
 vif_df
@@ -1206,9 +1261,9 @@ stargazer(
   no.space = TRUE, 
   add.lines = list(
     c("Observations", nobs(first_stage)),
-    c("R-squared", round(first_stage_summary$r.squared, 3)),
-    c("Adjusted R-squared", round(first_stage_summary$adj.r.squared, 3)),
-    c("Residual Std. Error", round(first_stage_summary$sigma, 3)),
+    c("R-squared", round(first_stage$r.squared, 3)),
+    c("Adjusted R-squared", round(first_stage$adj.r.squared, 3)),
+    c("Residual Std. Error", round(first_stage$sigma, 3)),
     c("Correlation between demo and residuals", round(correlation_exogeneity, 3))
   )
 )
@@ -1290,11 +1345,11 @@ library(stargazer)
 library(AER)
 library(sandwich)
 library(survival)
-model4_formula <- ivreg(Gini_Index ~ density2 + CollectiveBargain_Coverage + density2*cluster2 + density2*cluster3 + Inflation + WageGrowth + lnminwage + lnGDP + Gov_debt + ln_labor + Female_Workers + Parttime_employment + WomenUnemployment_rate + factor(Country) + factor(Year) | TradeUnions_Density + demo + density2*cluster2 + density2*cluster3 + Inflation + WageGrowth + lnminwage + CollectiveBargain_Coverage + lnGDP + Gov_debt + ln_labor + Female_Workers + Parttime_employment + WomenUnemployment_rate + factor(Country) + factor(Year), data = dataset)
+model4_formula <- ivreg(Gini_Index ~ density2 + CollectiveBargain_Coverage + density2*cluster2 + density2*cluster3 + Inflation + WageGrowth2 + lnminwage + lnGDP + Gov_debt + ln_labor + Female_Workers + Parttime_employment + WomenUnemployment_rate + factor(Country) + factor(Year) | TradeUnions_Density + demo + density2*cluster2 + density2*cluster3 + Inflation + WageGrowth + lnminwage + CollectiveBargain_Coverage + lnGDP + Gov_debt + ln_labor + Female_Workers + Parttime_employment + WomenUnemployment_rate + factor(Country) + factor(Year), data = dataset)
 
-model5_formula <- ivreg(Gini_Index ~ density2 + CollectiveBargain_Coverage + density2*cluster2 + density2*cluster3 +Inflation + WageGrowth + lnminwage + lnGDP + Gov_debt + ln_labor + Female_Workers + Parttime_employment + WomenUnemployment_rate + net_export + factor(Country) + factor(Year) | TradeUnions_Density + demo + density2*cluster2 + density2*cluster3 + Inflation + WageGrowth + lnminwage + CollectiveBargain_Coverage + lnGDP + Gov_debt + ln_labor + Female_Workers + Parttime_employment + WomenUnemployment_rate + net_export + factor(Country) + factor(Year), data = dataset)
+model5_formula <- ivreg(Gini_Index ~ density2 + CollectiveBargain_Coverage + density2*cluster2 + density2*cluster3 +Inflation + WageGrowth2 + lnminwage + lnGDP + Gov_debt + ln_labor + Female_Workers + Parttime_employment + WomenUnemployment_rate + net_export + factor(Country) + factor(Year) | TradeUnions_Density + demo + density2*cluster2 + density2*cluster3 + Inflation + WageGrowth + lnminwage + CollectiveBargain_Coverage + lnGDP + Gov_debt + ln_labor + Female_Workers + Parttime_employment + WomenUnemployment_rate + net_export + factor(Country) + factor(Year), data = dataset)
 
-model6_formula <- ivreg(Gini_Index ~ density2 + CollectiveBargain_Coverage + density2*cluster2 + density2*cluster3 + Inflation + WageGrowth + lnminwage + lnGDP + Gov_debt + ln_labor + Female_Workers + Parttime_employment + WomenUnemployment_rate + net_export + net_FDI + Tax_contribution + factor(Country) + factor(Year) | TradeUnions_Density + demo + density2*cluster2 + density2*cluster3 + Inflation + WageGrowth + lnminwage + CollectiveBargain_Coverage + lnGDP + Gov_debt + ln_labor + Female_Workers + Parttime_employment + WomenUnemployment_rate + net_export + net_FDI + Tax_contribution + factor(Country) + factor(Year), data = dataset)
+model6_formula <- ivreg(Gini_Index ~ density2 + CollectiveBargain_Coverage + density2*cluster2 + density2*cluster3 + Inflation + WageGrowth2 + lnminwage + lnGDP + Gov_debt + ln_labor + Female_Workers + Parttime_employment + WomenUnemployment_rate + net_export + net_FDI + Tax_contribution + factor(Country) + factor(Year) | TradeUnions_Density + demo + density2*cluster2 + density2*cluster3 + Inflation + WageGrowth + lnminwage + CollectiveBargain_Coverage + lnGDP + Gov_debt + ln_labor + Female_Workers + Parttime_employment + WomenUnemployment_rate + net_export + net_FDI + Tax_contribution + factor(Country) + factor(Year), data = dataset)
 
 # Estimate the models
 model4 <- summary(model4_formula)
