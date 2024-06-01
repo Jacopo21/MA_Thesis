@@ -71,23 +71,6 @@ Lack of education access can perpetuate inequality, highlighting a potential are
 - Economic Variables: Real Average Annual Wage Growth, Annual Inflation CPI, Exports of Goods and services (annual % growth), Foreign direct investment (net inflows and outflows as % of GDP), Imports of goods and services (% of GDP).
 - Labor Market Variables: Employment/population ratio, Labour force participation rate, Unemployment rate, Labor force total, Labor tax and contributions (% of commercial profits), Part time employment, total (% of total employment).
 
-
-# 3. Causal Effect Measurement
-### Two ways Fixed Effect (2WFE)
-When utilizing panel data to investigate the complex relationship between trade union density and income inequality, employing a two-way fixed effects model is methodologically robust for several reasons. This approach allows us to control for unobserved heterogeneity that could bias our results, both at the entity level (such as specific characteristics of countries or states that are constant over time) and over time (such as global economic shocks or trends that affect all entities in the same period).
-Firstly, by incorporating entity fixed effects, we account for any time-invariant characteristics unique to each entity—be it a country, state, or region—that might influence both trade union density and income inequality. This is crucial as it helps to isolate the effect of trade union density on income inequality from other static entity-specific factors that could confound the relationship, such as cultural attitudes towards labour, historical labour market institutions, or long-standing economic structures.
-Secondly, time-fixed effects are included to control for common shocks or trends that impact all entities in the same time period. For instance, global financial crises, technological advancements, or international labour market trends are factors that could simultaneously influence trade union density and income inequality across all entities. By controlling for these common temporal effects, the two-way fixed effects model allows for a clearer interpretation of the causality between the variables of interest.
-Papers such as those by Freeman (1991) and Guschanski and Onaran (2018), offer insights into labour market dynamics that can underpin such methodological choices. These studies, and others like them, typically inform the selection of a two-way fixed effects model by illustrating the multifaceted nature of labour dynamics and the need to control for both observable and unobservable factors.
-
-
-### 2WFE with Instrumental Variable
-The logic behind using minimum wage as an instrumental variable is as follows:
-- Relevance: Minimum wage laws directly affect wages, especially at the lower end of the income distribution. By setting a floor for wages, they are likely to affect the earnings of low-wage workers, which can have an impact on overall wage distribution and, consequently, income inequality.
-- Exogeneity: The introduction or change in the minimum wage is typically a policy decision that should be independent of individual workers' productivity or economic outcomes, thus satisfying the requirement of being exogenous to the error term of the main income inequality equation.
-
-The minimum wage legislation represents a pivotal instrument in labour economics, providing a unique vantage point for examining the impact on income distribution. Its exogenous variation, prompted by policy decisions, offers a tool to disentangle the effects on the lower wage spectrum and, by extension, on the broader measure of income inequality. This legislative tool can thus elucidate the dynamics between wage policies and economic disparity."
-When employing the minimum wage as an IV, it’s important to consider the context and the potential for other concurrent policy changes or economic events that might also influence the labour market. If these factors are correlated with the implementation of minimum wage laws and independently affect income inequality, they could violate the exogeneity assumption and introduce bias into the analysis. Careful consideration and robustness checks are typically required to affirm the validity of the IV.
-
 # 4. Bibliography
 - Freeman, R.B. (1991). ‘How Much Has De-Unionisation Contributed to the Rise in Male Earnings Inequality?’, NBER Working Paper Series. doi: 10.3386/W3826;
 - Guschanski, A. and Onaran, Ö. (2018). ‘What drives the four decades-long decline in labour’s share of income?’, Greenwich Political Economy Research Centre (GPERC), No. PB22-2018;
