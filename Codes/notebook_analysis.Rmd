@@ -1014,6 +1014,7 @@ ggplot() +
 ```
 
 ```{r}
+library(ggplot2)
 demo_density <- ggplot() +
   geom_line(data = average_norm_density, aes(x = Year, y = norm_density, color = "Density"), size = 1) +
   geom_line(data = average_norm_demo, aes(x = Year, y = norm_demo, color = "Democracy Index"), size = 1) +
@@ -1021,7 +1022,7 @@ demo_density <- ggplot() +
        x = "Year",
        y = "Average",
        color = "Variable") +
-  scale_color_manual(values = c("blue", "green"),
+  scale_color_manual(values = c("green", "blue"),
                      labels = c("Density", "Democracy Index")) +
   theme_minimal() +
   theme(legend.position = "bottom",
